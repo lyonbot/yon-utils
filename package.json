@@ -1,0 +1,32 @@
+{
+  "name": "yon-utils",
+  "version": "1.0.0",
+  "description": "Some utils that I repeated too many times. DRY!",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "node ./_builder/preproc.mjs",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lyonbot/yon-utils.git"
+  },
+  "keywords": [],
+  "files": [
+    "[!_.]*/*.{js,d.ts}",
+    "!**/*.{test,spec,stories,story}.*"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lyonbot/yon-utils/issues"
+  },
+  "homepage": "https://github.com/lyonbot/yon-utils#readme",
+  "devDependencies": {
+    "fs-extra": "^11.1.0",
+    "glob": "^8.1.0",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1"
+  }
+}
