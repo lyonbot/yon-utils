@@ -42,12 +42,34 @@ const markdownEnd = oldMarkdown.slice(oldMarkdown.indexOf(markdownEndMark))
 
 // -------------
 
-let newMarkdown = markdownBegin
-for await (const content of genAPIDoc()) newMarkdown += content + '\n'
-newMarkdown += markdownEnd
+let newMarkdown = ''
+let toc = Object.fromEntries(Object.keys(dirs).map(d => [d, []]))
+let lastLine
+for await (const content of genAPIDoc(toc)) {
+  if (content.isTOCItem) {
+    tocItems.push(content.isTOCItem)
+    continue
+  }
+
+  if (!content && !lastLine) continue
+  lastLine = content
+  newMarkdown += content + '\n'
+}
+
+newMarkdown =
+  `${markdownBegin}
+
+## ToC
+
+| module | methods |
+|---------|:--------|
+${Object.entries(toc).map(([dir, items]) => `| ${dir} | ${items.map(x => `[${x}](#fn-${x})`).join(' / ')} |`).join('\n')}
+
+${newMarkdown}
+${markdownEnd}`
 await writeFile(markdownFilePath, newMarkdown)
 
-async function* genAPIDoc() {
+async function* genAPIDoc(toc) {
   const tsPath = resolve(root, 'tsconfig.json')
   const tsConfig = ts.parseConfigFileTextToJson(tsPath, await readFile(tsPath, 'utf8')).config
   const tsCompilerOptions = ts.convertCompilerOptionsFromJson(tsConfig.compilerOptions).options
@@ -68,9 +90,10 @@ async function* genAPIDoc() {
 
         let funcType = checker.getTypeAtLocation(decl)
         let callSignature = funcType.getCallSignatures().slice(-1)[0]
+        let funcName = decl.name.getText()
 
         let signatureText = (
-          decl.name.getText()
+          funcName
           + '('
           + decl.parameters.map(it => {
             let ans = it.name.getText();
@@ -81,6 +104,8 @@ async function* genAPIDoc() {
           + ')'
         )
 
+        toc[dir].push(funcName)
+        yield `<a id="fn-${funcName}"></a>`
         yield `### \`${signatureText}\``
         yield ''
 
@@ -110,18 +135,22 @@ async function* genAPIDoc() {
           const decl = param.getDeclarations()[0]
           const type = checker.getTypeAtLocation(decl)
           const name = param.getName()
-          const doc = paramsDoc[name] || ''
+          const doc = indent(paramsDoc[name], '  ')
 
-          yield '- **' + name + '**: `' + checker.typeToString(type) + '` ' + doc.replace(/\n/g, '\n  ')
+          yield `- **${name}**: \`${typeToString(type, decl)}\` ${doc}`
+          yield indent(propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf), '  ', true)
           yield ''
         }
 
+        if (decl.name.getText() === 'fnQueue') debugger
+
         {
-          const retType = callSignature.getReturnType()
-          const doc = returnDoc
+          const type = callSignature.getReturnType()
+          const decl = type.getSymbol()?.getDeclarations()?.[0]
+          const doc = indent(returnDoc, '  ')
 
-          yield '- Returns: `' + checker.typeToString(retType) + '` ' + doc.replace(/\n/g, '\n  ')
-
+          yield `- Returns: \`${typeToString(type, decl)}\` ${doc}`
+          yield indent(propertiesToMarkdownList(decl, sf), '  ', true)
           yield ''
         }
 
@@ -137,8 +166,46 @@ async function* genAPIDoc() {
       }
     }
   }
+
+  function typeToString(type, decl) {
+    if (decl && ts.isObjectLiteralExpression(decl)) return `{ ${decl.properties
+      .map(x => x.name?.getText())
+      .filter(Boolean)
+      .join(', ')
+      } }`
+    return checker.typeToString(type)
+  }
+
+  /** @param {ts.Node} node */
+  function propertiesToMarkdownList(node, limitToSourceFile) {
+    if (!node || !(ts.isInterfaceDeclaration(node) || ts.isObjectLiteralElementLike(node) || ts.isObjectLiteralExpression)) return ''
+
+    const type = checker.getTypeAtLocation(node)
+    const props = type.getProperties()
+
+    const ans = [];
+    for (const prop of props) {
+      const decl = prop.getDeclarations()[0]
+      if (limitToSourceFile !== decl.getSourceFile()) continue  // not from this project
+
+      const type = checker.getTypeAtLocation(decl)
+      const name = prop.getName()
+      const doc = indent(joinText(prop.getDocumentationComment()), '  ')
+      ans.push(`- **${name}**: \`${checker.typeToString(type)}\` ${doc}`)
+    }
+
+    return ans.join('\n\n')
+  }
 }
 
 function joinText(syms) {
   return String(syms.map(x => x.text || '').join('\n\n')).trim()
+}
+
+function indent(str, indent, includeFirstLine = false) {
+  if (!str) return ''
+
+  str = str.replace(/^/gm, indent)
+  if (!includeFirstLine) str = str.slice(indent.length)
+  return str
 }

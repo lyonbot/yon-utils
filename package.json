@@ -24,7 +24,7 @@
     "!**/*.{test,spec,stories,story}.*"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lyonbot/yon-utils/issues"
   },
