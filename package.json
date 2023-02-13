@@ -1,9 +1,14 @@
 {
   "name": "yon-utils",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "type": "module",
   "description": "Some utils that I repeated too many times. DRY!",
   "main": "index.js",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
+    "prepack": "npm run build",
     "prebuild": "node ./_builder/preproc.mjs",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,6 +19,7 @@
   },
   "keywords": [],
   "files": [
+    "index.{js,d.ts}",
     "[!_.]*/*.{js,d.ts}",
     "!**/*.{test,spec,stories,story}.*"
   ],
@@ -24,7 +30,6 @@
   },
   "homepage": "https://github.com/lyonbot/yon-utils#readme",
   "devDependencies": {
-    "fs-extra": "^11.1.0",
     "glob": "^8.1.0",
     "typescript": "^4.9.5",
     "vite": "^4.1.1"

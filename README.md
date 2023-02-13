@@ -1,5 +1,16 @@
+# yon-utils
 
 Some utils that I repeated too many times. DRY!
+
+All modules are shipped as ES modules and tree-shakable.
+
+- via package manager
+
+  `npm install yon-utils`
+
+- via import within `<script type="module">`
+
+  `import { elt } from "https://unpkg.com/yon-utils"`
 
 <!-- auto generate begin -->
 
@@ -73,6 +84,7 @@ and it will keep tracking the cursor's movement, calling your `onMove(...)`, unt
 (not support ❌ `touchstart` -- use ✅ `pointerdown` instead)
 
 #### Example
+
 ```js
 button.addEventListener('pointerdown', event => {
   event.preventDefault();
