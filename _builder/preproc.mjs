@@ -85,12 +85,14 @@ async function* genAPIDoc(toc) {
       const sym = checker.getSymbolAtLocation(sf);
 
       for (const s of checker.getExportsOfModule(sym)) {
-        let decl = s.getDeclarations().find(x => ts.isFunctionLike(x))
-        if (!decl) continue;
+        let funcType = checker.getTypeAtLocation(s.getDeclarations()[0])  // this temp "decl" could be a variableDeclarator
+        let callSignature = funcType?.getCallSignatures().slice(-1)[0]
+        let decl = callSignature?.getDeclaration() // exact the FunctionLike expression or decl
 
-        let funcType = checker.getTypeAtLocation(decl)
-        let callSignature = funcType.getCallSignatures().slice(-1)[0]
-        let funcName = decl.name.getText()
+        if (!decl) continue;
+        if (ts.isTypeNode(decl)) continue;  // ignore "type XXX = ..."
+
+        let funcName = s.getName()
 
         let signatureText = (
           funcName
@@ -141,8 +143,6 @@ async function* genAPIDoc(toc) {
           yield indent(propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf), '  ', true)
           yield ''
         }
-
-        if (decl.name.getText() === 'fnQueue') debugger
 
         {
           const type = callSignature.getReturnType()

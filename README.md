@@ -21,7 +21,7 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
-| flow | [fnQueue](#fn-fnQueue) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) |
+| flow | [fnQueue](#fn-fnQueue) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
@@ -215,6 +215,17 @@ doSomeRequest(..., result => handler.resolve(result));
 
 const result = await handler.wait();
 ```
+
+<a id="fn-debouncePromise"></a>
+### `debouncePromise(fn)`
+
+- **fn**: `() => Promise<T>` 
+
+- Returns: `() => Promise<T>` 
+
+Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
+
+The suppressed call will return the running Promise, which is started before.
 
 <br />
 
