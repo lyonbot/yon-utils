@@ -18,7 +18,7 @@ export interface MouseMoveInitOptions {
   onEnd?: (data: MouseMoveInfo) => void
 }
 
-const supportPointerEvents = 'onpointerdown' in document
+const supportPointerEvents = typeof document !== 'undefined' && 'onpointerdown' in document
 
 /**
  * use this in `mousedown` or `pointerdown`
