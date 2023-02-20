@@ -1,4 +1,4 @@
-import { CollectionOf, contains } from "./iterable";
+import { CollectionOf, contains } from "./iterable.js";
 
 /**
  * Quickly compute string hash with [cyrb53 algorithm](https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js)

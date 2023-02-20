@@ -1,4 +1,4 @@
-import { shallowEqual } from "../type/compare";
+import { shallowEqual } from "../type/compare.js";
 
 /**
  * Wrap `fn` and create an unary function. The actual `fn()` executes only when the argument changes.
