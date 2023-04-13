@@ -21,7 +21,7 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
-| flow | [fnQueue](#fn-fnQueue) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
+| flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
@@ -140,6 +140,32 @@ try {
   onDispose.call(); // close handles
   
   onDispose.call(); // nothing happens -- the queue is emptied
+}
+```
+
+<br />
+
+## 🧩 flow/makeAsyncIterator
+
+<a id="fn-makeAsyncIterator"></a>
+### `makeAsyncIterator()`
+
+- Returns: `{ write(value: T): void; end(): void; } & AsyncIterableIterator<T>` 
+
+Help you convert a callback-style stream into an async iterator. Also works on "observable" value like RxJS.
+
+You can think of this as a simplified `new Readable({ ... })` without headache.
+
+#### Example
+
+```js
+const iterator = makeAsyncIterator();
+
+socket.on('data', value => iterator.write(value));
+socket.on('end', value => iterator.end());
+
+for await (const line of iterator) {
+  console.log(line);
 }
 ```
 
