@@ -8,7 +8,7 @@
  * const iterator = makeAsyncIterator();
  * 
  * socket.on('data', value => iterator.write(value));
- * socket.on('end', value => iterator.end());
+ * socket.on('end', () => iterator.end());
  * 
  * for await (const line of iterator) {
  *   console.log(line);
