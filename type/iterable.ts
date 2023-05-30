@@ -73,3 +73,20 @@ export function contains<T>(collection: CollectionOf<T> | null | undefined, item
   if ('has' in collection && typeof collection.has === 'function') return collection.has(item);
   return Object.hasOwnProperty.call(collection, String(item));
 }
+
+/**
+ * a simple forEach iterator that support both `Array | Set | Map | Object | Iterable` as the input
+ */
+export function forEach(objOrArray: any, iter: (value: any, key: any, whole: any) => any) {
+  if (!objOrArray || typeof objOrArray !== 'object') return;
+  if (Array.isArray(objOrArray) || objOrArray instanceof Map) return objOrArray.forEach(iter);
+  if (Symbol.iterator in objOrArray) {
+    let index = 0;
+    for (const iterator of (objOrArray as any)) iter(iterator, index++, objOrArray)
+    return
+  }
+  for (const k of Object.keys(objOrArray)) {
+    if (!Object.hasOwnProperty.call(objOrArray, k)) continue;
+    iter(objOrArray[k], k, objOrArray);
+  }
+}

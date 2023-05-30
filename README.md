@@ -22,7 +22,7 @@ All modules are shipped as ES modules and tree-shakable.
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
-| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
+| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
 
@@ -35,12 +35,21 @@ All modules are shipped as ES modules and tree-shakable.
 
 - Returns: `Promise<void>` 
 
+write text to clipboard, with support for insecure context and legacy browser!
+
+note: if you are in HTTPS and modern browser, you can directly use `navigator.clipboard.writeText()` instead.
+
 <a id="fn-readClipboard"></a>
 ### `readClipboard(timeout?)`
 
 - **timeout**: `number` - default 1500
 
 - Returns: `Promise<string>` 
+
+read clipboard text.
+
+if user rejects or hesitates about the permission for too long,
+this will throw an Error.
 
 <br />
 
@@ -358,6 +367,17 @@ Take the first result from a Iterator
 - Returns: `boolean` 
 
 input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contains the `item`
+
+<a id="fn-forEach"></a>
+### `forEach(objOrArray, iter)`
+
+- **objOrArray**: `any` 
+
+- **iter**: `(value: any, key: any, whole: any) => any` 
+
+- Returns: `void` 
+
+a simple forEach iterator that support both `Array | Set | Map | Object | Iterable` as the input
 
 <br />
 
