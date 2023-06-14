@@ -20,8 +20,8 @@ All modules are shipped as ES modules and tree-shakable.
 
 | module | methods |
 |---------|:--------|
-| dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
-| flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
+| dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
+| flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
@@ -42,7 +42,7 @@ note: if you are in HTTPS and modern browser, you can directly use `navigator.cl
 <a id="fn-readClipboard"></a>
 ### `readClipboard(timeout?)`
 
-- **timeout**: `number` - default 1500
+- **timeout**: `number` — default 1500
 
 - Returns: `Promise<string>` 
 
@@ -53,19 +53,36 @@ this will throw an Error.
 
 <br />
 
+## 🧩 dom/clsx
+
+<a id="fn-clsx"></a>
+### `clsx(...args)`
+
+- **args**: `any[]` 
+
+- Returns: `string` 
+
+construct className strings conditionally.
+
+can be an alternative to `classnames()`. modified from [lukeed/clsx](https://github.com/lukeed/clsx). to integrate with Tailwind VSCode, [read this](https://github.com/lukeed/clsx#tailwind-support)
+
+<br />
+
 ## 🧩 dom/elt
 
 <a id="fn-elt"></a>
 ### `elt(tagName, attrs, ...children)`
 
-- **tagName**: `string` - for example `"div"`
+- **tagName**: `string` — for example `"div"`
 
-- **attrs**: `any` - attribute values to be set. beware:
-  - `onClick: fn()` will invoke addEventListener
+- **attrs**: `any` — attribute values to be set. beware:
+  - `onClick` and a `function` value, will be handled by `addEventListener()`
+  - `!onClick` or `onClick.capture` will make it capture
   - `style` supports passing in an object
-  - `className` will be set to `class` attribute instead
+  - `class` value will be process by `clsx()`
+  - `className` is alias of `class`
 
-- **children**: `any[]` - can be strings, numbers, nodes. other types or nils will be omitted.
+- **children**: `any[]` — can be strings, numbers, nodes. other types or nils will be omitted.
 
 - Returns: `HTMLElement` 
 
@@ -76,7 +93,7 @@ var button = elt('button', { class: 'myButton', onclick: () => alert('hi') }, 'C
 ```
 
 This function can be used as a [jsxFactory](https://www.typescriptlang.org/tsconfig#jsxFactory), aka [JSX pragma](https://www.gatsbyjs.com/blog/2019-08-02-what-is-jsx-pragma/).
-You can add /** &#64;jsx elt *&#47; into your code, then TypeScript / Babel will use `elt` to process JSX expressions:
+You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript / Babel will use `elt` to process JSX expressions:
 
 > /** &#64;jsx elt *&#47;
 >
@@ -96,7 +113,7 @@ You can add /** &#64;jsx elt *&#47; into your code, then TypeScript / Babel will
   
   - **onEnd**: `((data: MouseMoveInfo) => void) | undefined` 
 
-- Returns: `Promise<MouseMoveInfo>` - the final position when user releases button
+- Returns: `Promise<MouseMoveInfo>` — - the final position when user releases button
 
 use this in `mousedown` or `pointerdown`
 
@@ -125,11 +142,11 @@ button.addEventListener('pointerdown', event => {
 ### `fnQueue()`
 
 - Returns: `{ tap, call, queue }` 
-  - **tap**: `(...fns: Fn[]) => void` add callbacks into the queue
+  - **tap**: `(...fns: Fn[]) => void` — add callbacks into the queue
   
-  - **call**: `(...args: ARGS) => void` invoke all callbacks and clear the queue
+  - **call**: `(...args: ARGS) => void` — invoke all callbacks and clear the queue
   
-  - **queue**: `Fn[]` the array of all tapped callbacks
+  - **queue**: `Fn[]` — the array of all tapped callbacks
 
 #### Example
 
@@ -190,7 +207,7 @@ for await (const line of iterator) {
 - **isEqual**: `(x: T, y: T) => boolean` 
 
 - Returns: `{ (input: T): void; cleanup: () => void; }` 
-  - **cleanup**: `() => void` invoke last cleanup callback, and forget the last input
+  - **cleanup**: `() => void` — invoke last cleanup callback, and forget the last input
 
 Wrap `fn` and create an unary function. The actual `fn()` executes only when the argument changes.
 
@@ -218,6 +235,21 @@ sayHi.cleanup(); // no output
 
 <br />
 
+## 🧩 flow/maybeAsync
+
+<a id="fn-maybeAsync"></a>
+### `maybeAsync(input)`
+
+- **input**: `T | Promise<T> | (() => T | Promise<T>)` — your sync/async function to run, or just a value
+
+- Returns: `PromiseEx<T>` — a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
+
+Run the function, return a crafted Promise that exposes `status`, `value` and `reason`
+
+Useful when you are not sure whether `fn` is async or not.
+
+<br />
+
 ## 🧩 flow/promise
 
 <a id="fn-delay"></a>
@@ -231,13 +263,14 @@ sayHi.cleanup(); // no output
 ### `makePromise()`
 
 - Returns: `PromiseHandle<T>` 
-  - **resolve**: `(ans: T) => void` 
+  - **resolve**: `(value: T) => void` — make this Promise resolved / fulfilled with given value
   
-  - **reject**: `(err: any) => void` 
+  - **reject**: `(reason: any) => void` — make this Promise rejected with given reason / error.
   
-  - **wait**: `(timeout?: number | undefined) => Promise<T>` 
+  - **wait**: `(timeout?: number | undefined) => Promise<T>` — wait for result. optionally can set a timeout in milliseconds.
   
-  - **peek**: `() => { status: "fulfilled" | "rejected" | "pending"; value?: T | undefined; reason?: any; }` 
+  - **peek**: `() => PromisePeekResult<T>` — check the Promise's status 
+    - returns `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
 
 Create a Promise and take out its `resolve` and `reject` methods.
 

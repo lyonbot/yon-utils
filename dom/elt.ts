@@ -1,5 +1,7 @@
 /// <reference lib="dom" />
 
+import { clsx } from "./clsx.js";
+
 /**
  * Make `document.createElement` easier
  * 
@@ -8,7 +10,7 @@
  * ```
  * 
  * This function can be used as a [jsxFactory](https://www.typescriptlang.org/tsconfig#jsxFactory), aka [JSX pragma](https://www.gatsbyjs.com/blog/2019-08-02-what-is-jsx-pragma/).
- * You can add /** &#64;jsx elt *&#47; into your code, then TypeScript / Babel will use `elt` to process JSX expressions:
+ * You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript / Babel will use `elt` to process JSX expressions:
  * 
  * > /** &#64;jsx elt *&#47;
  * >
@@ -16,9 +18,11 @@
  *
  * @param {string} tagName - for example `"div"`
  * @param {Object} [attrs] - attribute values to be set. beware:
- *  - `onClick: fn()` will invoke addEventListener
+ *  - `onClick` and a `function` value, will be handled by `addEventListener()`
+ *  - `!onClick` or `onClick.capture` will make it capture
  *  - `style` supports passing in an object
- *  - `className` will be set to `class` attribute instead
+ *  - `class` value will be process by `clsx()`
+ *  - `className` is alias of `class`
  * @param {Array<any>} [children] - can be strings, numbers, nodes. other types or nils will be omitted.
  */
 export function elt<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs: any, ...children: any[]): HTMLElementTagNameMap[K]
@@ -33,9 +37,11 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
       if (value === true) value = '';
 
       // "onXXXX" events
-      if (typeof value === 'function' && /^on\w/.test(key)) {
-        const evtName = key.slice(2).toLowerCase();
-        el.addEventListener(evtName, value, false);
+      let evtMat = typeof value === 'function' && /^(!?)on([\w-]+)(\.capture)?/.exec(key)
+      if (evtMat) {
+        const evtName = evtMat[2].slice(2).toLowerCase();
+        const capture = !!(evtMat[1] || evtMat[3])
+        el.addEventListener(evtName, value, capture);
         return;
       }
 
@@ -49,6 +55,7 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
 
       // "className" for TypeScript
       if (key === 'className') key = 'class'
+      if (key === 'class') value = clsx(value)
 
       el.setAttribute(key, String(value));
     });

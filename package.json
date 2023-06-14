@@ -11,7 +11,8 @@
     "prepack": "npm run build",
     "prebuild": "node ./_builder/preproc.mjs",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "glob": "^8.1.0",
     "typescript": "^4.9.5",
-    "vite": "^4.1.1"
+    "vite": "^4.1.1",
+    "vitest": "^0.32.0"
   }
 }

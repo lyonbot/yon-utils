@@ -8,4 +8,6 @@
     "**/Thumbs.db": true,
     "[!_]*/*.{d.ts,js}": true,
   },
+  "vitest.enable": true,
+  "testing.automaticallyOpenPeekView": "never",
 }

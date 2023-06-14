@@ -2,15 +2,33 @@ export function delay(milliseconds: number) {
   return new Promise<void>(r => setTimeout(r, Math.max(~~milliseconds, 0)));
 }
 
+export interface PromisePeekResult<T> {
+  status: 'fulfilled' | 'rejected' | 'pending';
+  value?: T;
+  reason?: any;
+}
+
 export interface PromiseHandle<T> {
-  resolve: (ans: T) => void;
-  reject: (err: any) => void;
+  /**
+   * make this Promise resolved / fulfilled with given value
+   */
+  resolve: (value: T) => void;
+
+  /**
+   * make this Promise rejected with given reason / error.
+   */
+  reject: (reason: any) => void;
+
+  /**
+   * wait for result. optionally can set a timeout in milliseconds.
+   */
   wait: (timeout?: number) => Promise<T>;
-  peek: () => {
-    status: 'fulfilled' | 'rejected' | 'pending';
-    value?: T;
-    reason?: any;
-  };
+
+  /**
+   * check the Promise's status 
+   * - returns `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"` 
+   */
+  peek: () => PromisePeekResult<T>;
 }
 
 /**

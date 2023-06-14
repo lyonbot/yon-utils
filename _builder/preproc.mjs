@@ -121,6 +121,7 @@ async function* genAPIDoc(toc) {
               if (!name) continue
 
               paramsDoc[name] = joinText(it.text).slice(name.length).trim()
+                .replace(/^-\s*/, '')    // TSDoc may require a extra " - "
             }
 
             if (it.name === 'return' || it.name === 'returns') {
@@ -137,20 +138,20 @@ async function* genAPIDoc(toc) {
           const decl = param.getDeclarations()[0]
           const type = checker.getTypeAtLocation(decl)
           const name = param.getName()
-          const doc = indent(paramsDoc[name], '  ')
+          const doc = indent(paramsDoc[name], '  ', '— ')
 
           yield `- **${name}**: \`${typeToString(type, decl)}\` ${doc}`
-          yield indent(propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf), '  ', true)
+          yield indent(propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf), '  ')
           yield ''
         }
 
         {
           const type = callSignature.getReturnType()
           const decl = type.getSymbol()?.getDeclarations()?.[0]
-          const doc = indent(returnDoc, '  ')
+          const doc = indent(returnDoc, '  ', '— ')
 
           yield `- Returns: \`${typeToString(type, decl)}\` ${doc}`
-          yield indent(propertiesToMarkdownList(decl, sf), '  ', true)
+          yield indent(propertiesToMarkdownList(decl, sf), '  ')
           yield ''
         }
 
@@ -190,7 +191,7 @@ async function* genAPIDoc(toc) {
 
       const type = checker.getTypeAtLocation(decl)
       const name = prop.getName()
-      const doc = indent(joinText(prop.getDocumentationComment()), '  ')
+      const doc = indent(joinText(prop.getDocumentationComment()), '  ', '— ')
       ans.push(`- **${name}**: \`${checker.typeToString(type)}\` ${doc}`)
     }
 
@@ -202,10 +203,10 @@ function joinText(syms) {
   return String(syms.map(x => x.text || '').join('\n\n')).trim()
 }
 
-function indent(str, indent, includeFirstLine = false) {
+function indent(str, indent, indentForFirstLine = indent) {
   if (!str) return ''
 
   str = str.replace(/^/gm, indent)
-  if (!includeFirstLine) str = str.slice(indent.length)
+  str = (indentForFirstLine || '') + str.slice(indent.length)
   return str
 }
