@@ -20,19 +20,22 @@ export function makeAsyncIterator<T>() {
 
   let done = false;
   const queue: IteratorResult<T, any>[] = [];
+  const push = (item: IteratorResult<T, any>) => {
+    if (done) {
+      queue.length = 0;
+      return; // already closed
+    }
 
-  const x: { write(value: T): void; end(): void; } & AsyncIterableIterator<T> = {
+    queue.push(item);
+    onFeed.splice(0).forEach(f => f());
+  }
+
+  const asyncIterator: { write(value: T): void; end(): void; } & AsyncIterableIterator<T> = {
     write(value) {
-      if (done) {
-        queue.length = 0;
-        return; // already closed
-      }
-
-      queue.push({ value, done: false });
-      onFeed.splice(0).forEach(f => f());
+      push({ value, done: false });
     },
     end() {
-      queue.push({ done: true, value: undefined });
+      push({ done: true, value: undefined });
     },
     async next() {
       if (done) return { done: true, value: undefined }; // already closed
@@ -44,9 +47,9 @@ export function makeAsyncIterator<T>() {
       return ans;
     },
     [Symbol.asyncIterator]() {
-      return x;
+      return asyncIterator;
     },
   };
 
-  return x;
+  return asyncIterator;
 }
