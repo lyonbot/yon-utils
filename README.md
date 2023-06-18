@@ -22,6 +22,7 @@ All modules are shipped as ES modules and tree-shakable.
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
+| manager | [ModuleLoader](#fn-ModuleLoader) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
@@ -31,9 +32,9 @@ All modules are shipped as ES modules and tree-shakable.
 <a id="fn-writeClipboard"></a>
 ### `writeClipboard(text)`
 
-- **text**: `string` 
+- **text**: `string`
 
-- Returns: `Promise<void>` 
+- Returns: `Promise<void>`
 
 write text to clipboard, with support for insecure context and legacy browser!
 
@@ -42,9 +43,9 @@ note: if you are in HTTPS and modern browser, you can directly use `navigator.cl
 <a id="fn-readClipboard"></a>
 ### `readClipboard(timeout?)`
 
-- **timeout**: `number` — default 1500
+- **timeout?**: `number` — default 1500
 
-- Returns: `Promise<string>` 
+- Returns: `Promise<string>`
 
 read clipboard text.
 
@@ -58,9 +59,9 @@ this will throw an Error.
 <a id="fn-clsx"></a>
 ### `clsx(...args)`
 
-- **args**: `any[]` 
+- **args**: `any[]`
 
-- Returns: `string` 
+- Returns: `string`
 
 construct className strings conditionally.
 
@@ -76,15 +77,15 @@ can be an alternative to `classnames()`. modified from [lukeed/clsx](https://git
 - **tagName**: `string` — for example `"div"`
 
 - **attrs**: `any` — attribute values to be set. beware:
-  - `onClick` and a `function` value, will be handled by `addEventListener()`
-  - `!onClick` or `onClick.capture` will make it capture
-  - `style` supports passing in an object
-  - `class` value will be process by `clsx()`
-  - `className` is alias of `class`
+    - `onClick` and a `function` value, will be handled by `addEventListener()`
+    - `!onClick` or `onClick.capture` will make it capture
+    - `style` value could be a string or object
+    - `class` value could be a string, object or array, and will be process by `clsx()`
+    - `className` is alias of `class`
 
 - **children**: `any[]` — can be strings, numbers, nodes. other types or nils will be omitted.
 
-- Returns: `HTMLElement` 
+- Returns: `HTMLElement`
 
 Make `document.createElement` easier
 
@@ -109,9 +110,9 @@ You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript
 - **__0**: `MouseMoveInitOptions` 
   - **initialEvent**: `MouseEvent | PointerEvent` 
   
-  - **onMove**: `((data: MouseMoveInfo) => void) | undefined` 
+  - **onMove?**: `(data: MouseMoveInfo) => void` 
   
-  - **onEnd**: `((data: MouseMoveInfo) => void) | undefined` 
+  - **onEnd?**: `(data: MouseMoveInfo) => void`
 
 - Returns: `Promise<MouseMoveInfo>` — - the final position when user releases button
 
@@ -176,7 +177,7 @@ try {
 <a id="fn-makeAsyncIterator"></a>
 ### `makeAsyncIterator()`
 
-- Returns: `{ write(value: T): void; end(): void; } & AsyncIterableIterator<T>` 
+- Returns: `{ write(value: T): void; end(): void; } & AsyncIterableIterator<T>`
 
 Help you convert a callback-style stream into an async iterator. Also works on "observable" value like RxJS.
 
@@ -202,9 +203,9 @@ for await (const line of iterator) {
 <a id="fn-makeEffect"></a>
 ### `makeEffect(fn, isEqual?)`
 
-- **fn**: `(input: T, previous: T | undefined) => void | (() => void)` 
+- **fn**: `(input: T, previous: T | undefined) => void | (() => void)`
 
-- **isEqual**: `(x: T, y: T) => boolean` 
+- **isEqual?**: `(x: T, y: T) => boolean`
 
 - Returns: `{ (input: T): void; cleanup: () => void; }` 
   - **cleanup**: `() => void` — invoke last cleanup callback, and forget the last input
@@ -246,6 +247,8 @@ sayHi.cleanup(); // no output
 
 Run the function, return a crafted Promise that exposes `status`, `value` and `reason`
 
+If `input` is sync function, its result will be stored in `promise.value` and `promise.status` will immediately be set as "fulfilled"
+
 Useful when you are not sure whether `fn` is async or not.
 
 <br />
@@ -255,9 +258,9 @@ Useful when you are not sure whether `fn` is async or not.
 <a id="fn-delay"></a>
 ### `delay(milliseconds)`
 
-- **milliseconds**: `number` 
+- **milliseconds**: `number`
 
-- Returns: `Promise<void>` 
+- Returns: `Promise<void>`
 
 <a id="fn-makePromise"></a>
 ### `makePromise()`
@@ -287,13 +290,96 @@ const result = await handler.wait();
 <a id="fn-debouncePromise"></a>
 ### `debouncePromise(fn)`
 
-- **fn**: `() => Promise<T>` 
+- **fn**: `() => Promise<T>`
 
-- Returns: `() => Promise<T>` 
+- Returns: `() => Promise<T>`
 
 Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
 
 The suppressed call will return the running Promise, which is started before.
+
+<br />
+
+## 🧩 manager/moduleLoader
+
+<a id="fn-ModuleLoader"></a>
+### `new ModuleLoader(source)`
+
+- **source**: `ModuleLoaderSource<T>` 
+  - **handleLoad**: `(query: string, load: (target: string) => PromiseEx<T>) => MaybePromise<T>` 
+  
+  - **cache?**: `ModuleLoaderCache<any>`
+
+All-in-one ModuleLoader, support both sync and async mode, can handle circular dependency problem.
+
+### Example in Sync
+
+```js
+const loader = new ModuleLoader({
+  // sync example
+  handleLoad(query, load) {
+    if (query === 'father') return 'John'
+    if (query === 'mother') return 'Mary'
+
+    // simple alias: just `return load('xxx')`
+    if (query === 'mom') return load('mother')
+
+    // load dependency
+    // - `load('xxx').value` for sync, don't forget .value
+    // - `await load('xxx')` for async
+    if (query === 'family') return `${load('father').value} and ${load('mother').value}`
+
+    // always return something as fallback
+    return 'bad query'
+  }
+})
+
+console.log(loader.load('family').value)  // don't forget .value
+```
+
+### Example in Async
+
+```js
+const loader = new ModuleLoader({
+  // async example
+  async handleLoad(query, load) {
+    if (query === 'father') return 'John'
+    if (query === 'mother') return 'Mary'
+
+    // simple alias: just `return load('xxx')`
+    if (query === 'mom') return load('mother')
+
+    // load dependency
+    // - `await load('xxx')` for async
+    // - no need `.value` in async mode
+    if (query === 'family') return `${await load('father')} and ${await load('mother')}`
+
+    // always return something as fallback
+    return 'bad query'
+  }
+})
+
+console.log(await loader.load('family'))  // no need `.value` with `await`
+```
+
+#### ModuleLoader # cache
+- Type: `ModuleLoaderCache<{ dependencies?: string[] | undefined; promise: PromiseEx<T>; }>`
+
+#### ModuleLoader # load(query)
+- **query**: `string`
+
+- Returns: `PromiseEx<T>`
+
+fetch a module
+
+#### ModuleLoader # getDependencies(query)
+- **query**: `string`
+
+- Returns: `PromiseEx<string[]>`
+
+get all direct dependencies of a module.
+
+note: to get reliable result, this will completely load the module and deep dependencies.
 
 <br />
 
@@ -302,24 +388,24 @@ The suppressed call will return the running Promise, which is started before.
 <a id="fn-is"></a>
 ### `is(x, y)`
 
-- **x**: `any` 
+- **x**: `any`
 
-- **y**: `any` 
+- **y**: `any`
 
-- Returns: `boolean` 
+- Returns: `boolean`
 
 the `Object.is` algorithm
 
 <a id="fn-shallowEqual"></a>
 ### `shallowEqual(objA, objB, depth?)`
 
-- **objA**: `any` 
+- **objA**: `any`
 
-- **objB**: `any` 
+- **objB**: `any`
 
-- **depth**: `number` 
+- **depth?**: `number` — defaults to 1
 
-- Returns: `boolean` 
+- Returns: `boolean`
 
 <br />
 
@@ -328,13 +414,14 @@ the `Object.is` algorithm
 <a id="fn-newFunction"></a>
 ### `newFunction(args, code, options?)`
 
-- **args**: `ArgNames` 
+- **args**: `ArgNames` — a string array of argument names
 
-- **code**: `string` 
+- **code**: `string` — the function body
 
-- **options**: `{ async?: boolean | undefined; } | undefined` 
+- **options?**: `{ async?: boolean | undefined; }` 
+  - **async?**: `boolean` — set to `true` if the code contains `await`, the new function will be an async function
 
-- Returns: `Fn` 
+- Returns: `Fn`
 
 like `new Function` but with more reasonable options and api
 
@@ -345,9 +432,9 @@ like `new Function` but with more reasonable options and api
 <a id="fn-toArray"></a>
 ### `toArray(value)`
 
-- **value**: `OneOrMany<T>` 
+- **value**: `OneOrMany<T>`
 
-- Returns: `T[]` 
+- Returns: `T[]`
 
 Input anything, always return an array.
 
@@ -360,55 +447,55 @@ Finally before returning, all `null` and `undefined` will be omitted
 <a id="fn-find"></a>
 ### `find(iterator, predicate)`
 
-- **iterator**: `Iterable<T> | null | undefined` 
+- **iterator**: `Iterable<T> | null | undefined`
 
-- **predicate**: `Predicate<T>` 
+- **predicate**: `Predicate<T>`
 
-- Returns: `T | undefined` 
+- Returns: `T | undefined`
 
 Like `Array#find`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
 
 <a id="fn-reduce"></a>
 ### `reduce(iterator, initial, reducer)`
 
-- **iterator**: `Iterable<T> | null | undefined` 
+- **iterator**: `Iterable<T> | null | undefined`
 
-- **initial**: `U` 
+- **initial**: `U`
 
-- **reducer**: `(agg: U, item: T, index: number) => U` 
+- **reducer**: `(agg: U, item: T, index: number) => U`
 
-- Returns: `U` 
+- Returns: `U`
 
 Like `Array#reduce`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
 
 <a id="fn-head"></a>
 ### `head(iterator)`
 
-- **iterator**: `Iterable<T> | null | undefined` 
+- **iterator**: `Iterable<T> | null | undefined`
 
-- Returns: `T | undefined` 
+- Returns: `T | undefined`
 
 Take the first result from a Iterator
 
 <a id="fn-contains"></a>
 ### `contains(collection, item)`
 
-- **collection**: `CollectionOf<T> | null | undefined` 
+- **collection**: `CollectionOf<T> | null | undefined`
 
-- **item**: `T` 
+- **item**: `T`
 
-- Returns: `boolean` 
+- Returns: `boolean`
 
 input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contains the `item`
 
 <a id="fn-forEach"></a>
 ### `forEach(objOrArray, iter)`
 
-- **objOrArray**: `any` 
+- **objOrArray**: `any`
 
-- **iter**: `(value: any, key: any, whole: any) => any` 
+- **iter**: `(value: any, key: any, whole: any) => any`
 
-- Returns: `void` 
+- Returns: `void`
 
 a simple forEach iterator that support both `Array | Set | Map | Object | Iterable` as the input
 
@@ -419,20 +506,20 @@ a simple forEach iterator that support both `Array | Set | Map | Object | Iterab
 <a id="fn-stringHash"></a>
 ### `stringHash(str)`
 
-- **str**: `string` 
+- **str**: `string`
 
-- Returns: `number` 
+- Returns: `number`
 
 Quickly compute string hash with [cyrb53 algorithm](https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js)
 
 <a id="fn-getVariableName"></a>
 ### `getVariableName(basicName, existingVariables?)`
 
-- **basicName**: `string` 
+- **basicName**: `string`
 
-- **existingVariables**: `CollectionOf<string> | undefined` 
+- **existingVariables?**: `CollectionOf<string>`
 
-- Returns: `string` 
+- Returns: `string`
 
 input anything weird, get a valid variable name
 

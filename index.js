@@ -2,4 +2,5 @@
 
 export * from "./dom/index.js";
 export * from "./flow/index.js";
+export * from "./manager/index.js";
 export * from "./type/index.js";

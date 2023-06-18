@@ -84,17 +84,15 @@ async function* genAPIDoc(toc) {
       const sf = program.getSourceFile(resolve(root, dir, `${modulePath}.ts`));
       const sym = checker.getSymbolAtLocation(sf);
 
-      for (const s of checker.getExportsOfModule(sym)) {
-        let funcType = checker.getTypeAtLocation(s.getDeclarations()[0])  // this temp "decl" could be a variableDeclarator
-        let callSignature = funcType?.getCallSignatures().slice(-1)[0]
-        let decl = callSignature?.getDeclaration() // exact the FunctionLike expression or decl
+      /**
+       * @param {string} funcName
+       * @param {ts.Signature} callSignature
+       */
+      function getMethodDoc(funcName, callSignature, extraJSDocTags = []) {
+        const decl = callSignature?.getDeclaration() // exact the FunctionLike expression or decl
+        if (!decl) return null
 
-        if (!decl) continue;
-        if (ts.isTypeNode(decl)) continue;  // ignore "type XXX = ..."
-
-        let funcName = s.getName()
-
-        let signatureText = (
+        const signatureText = (
           funcName
           + '('
           + decl.parameters.map(it => {
@@ -106,21 +104,18 @@ async function* genAPIDoc(toc) {
           + ')'
         )
 
-        toc[dir].push(funcName)
-        yield `<a id="fn-${funcName}"></a>`
-        yield `### \`${signatureText}\``
-        yield ''
-
+        const paramsDocLUT = Object.create(null);
         let returnDoc = ''
         let exampleDoc = ''
 
-        const paramsDoc = Object.create(null); {
-          for (const it of [...callSignature.getJsDocTags(), ...s.getJsDocTags()]) {
+        // extract information from JSDoc
+        {
+          for (const it of [...callSignature.getJsDocTags(), ...extraJSDocTags]) {
             if (it.name === 'param') {
               const name = it.text?.find(x => x.kind === 'parameterName')?.text
               if (!name) continue
 
-              paramsDoc[name] = joinText(it.text).slice(name.length).trim()
+              paramsDocLUT[name] = joinText(it.text).slice(name.length).trim()
                 .replace(/^-\s*/, '')    // TSDoc may require a extra " - "
             }
 
@@ -134,24 +129,83 @@ async function* genAPIDoc(toc) {
           }
         }
 
-        for (const param of callSignature.getParameters()) {
-          const decl = param.getDeclarations()[0]
-          const type = checker.getTypeAtLocation(decl)
-          const name = param.getName()
-          const doc = indent(paramsDoc[name], '  ', '— ')
-
-          yield `- **${name}**: \`${typeToString(type, decl)}\` ${doc}`
-          yield indent(propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf), '  ')
-          yield ''
-        }
-
+        // prepend type info to `returnDoc`
         {
           const type = callSignature.getReturnType()
           const decl = type.getSymbol()?.getDeclarations()?.[0]
           const doc = indent(returnDoc, '  ', '— ')
 
-          yield `- Returns: \`${typeToString(type, decl)}\` ${doc}`
-          yield indent(propertiesToMarkdownList(decl, sf), '  ')
+          returnDoc = `Returns: \`${typeToString(type, decl)}\` ${doc}\n${propertiesToMarkdownList(decl, sf)}`.trim()
+        }
+
+        // generate params list
+        const paramsDoc = Array.from(callSignature.getParameters(), param => {
+          let decl = param.getDeclarations()[0]
+          let type = checker.getTypeAtLocation(decl)
+          let name = param.getName()
+          const doc = indent(paramsDocLUT[name], '  ', '— ')
+
+          if (decl.questionToken || decl.initializer) {
+            name += '?'
+            type = type.getNonNullableType()
+          }
+
+          return `**${name}**: \`${typeToString(type, decl)}\` ${doc}\n${propertiesToMarkdownList(
+            type?.getSymbol()?.getDeclarations()?.[0],
+            sf
+          ) || ''}`.trim()
+        })
+
+        return {
+          funcName,
+
+          /** like `foobar(a, b, ...c)` */
+          signatureText,
+
+          /** a string starts with `Returns: type - info` */
+          returnDoc,
+
+          /** optional, example extracted from jsdoc */
+          exampleDoc,
+
+          /** each item is like `**foobar**: type - info` */
+          paramsDoc,
+        }
+      }
+
+      for (const s of checker.getExportsOfModule(sym)) {
+        let funcType = checker.getTypeOfSymbolAtLocation(s, s.getDeclarations()[0])  // this temp "decl" could be a variableDeclarator
+        let callSignature = funcType?.getCallSignatures().slice(-1)[0]
+
+        let isClass = '';
+        if (!callSignature) {
+          callSignature = funcType.getConstructSignatures().slice(-1)[0]
+          isClass = 'new '
+        }
+
+        let decl = callSignature?.getDeclaration() // exact the FunctionLike expression or decl
+
+        if (!decl) continue;
+        if (ts.isTypeNode(decl)) continue;  // ignore "type XXX = ..."
+
+        const funcName = s.getName()
+        const parsed = getMethodDoc(funcName, callSignature, s.getJsDocTags())
+        if (!parsed) continue;
+
+        const { signatureText, returnDoc, exampleDoc, paramsDoc } = parsed
+
+        toc[dir].push(funcName)
+        yield `<a id="fn-${funcName}"></a>`
+        yield `### \`${isClass}${signatureText}\``
+        yield ''
+
+        for (const param of paramsDoc) {
+          yield indent(param, '  ', '- ')
+          yield ''
+        }
+
+        if (!isClass) {
+          yield indent(returnDoc, '  ', '- ')
           yield ''
         }
 
@@ -163,17 +217,65 @@ async function* genAPIDoc(toc) {
           yield exampleDoc
         }
 
+        const classType = !!isClass && callSignature.getReturnType()
+        if (classType && classType.isClass()) {
+          // yield '#### Class ' + funcName;
+          for (const s of classType.getProperties()) {
+            let prettyName = s.getName()
+
+            let decl = s.getDeclarations()[0]
+            if (ts.getCombinedModifierFlags(decl) & ts.ModifierFlags.Private) continue;
+
+            let funcType = checker.getTypeOfSymbolAtLocation(s, decl)  // this temp "decl" could be a variableDeclarator
+            let callSignature = funcType?.getCallSignatures().slice(-1)[0]
+            let parsed = getMethodDoc(s.getName(), callSignature, s.getJsDocTags())
+            if (parsed) prettyName = parsed.signatureText
+
+            yield `#### ${funcName} # ${prettyName}`
+            if (parsed) {
+              for (const param of parsed.paramsDoc) {
+                yield indent(param, '  ', '- ')
+                yield ''
+              }
+              yield indent(parsed.returnDoc, '  ', '- ')
+              yield ''
+            } else {
+              yield `- Type: \`${typeToString(funcType, decl)}\``
+              yield ''
+            }
+            yield joinText(s.getDocumentationComment())
+            yield ''
+          }
+          yield '';
+        }
+
         yield ''
       }
     }
   }
 
+  /**
+   * 
+   * @param {ts.Type} type 
+   * @param {*} decl 
+   * @returns 
+   */
   function typeToString(type, decl) {
-    if (decl && ts.isObjectLiteralExpression(decl)) return `{ ${decl.properties
-      .map(x => x.name?.getText())
-      .filter(Boolean)
-      .join(', ')
-      } }`
+    if (decl && ts.isObjectLiteralExpression(decl)) {
+      return `{ ${
+        // simply listing properties
+        decl.properties
+          .map(x => {
+            let name = x.name?.getText()
+            if (!name) return ''
+            if (x.questionToken) name += '?'
+
+            return name
+          })
+          .filter(Boolean)
+          .join(', ')
+        } }`
+    }
     return checker.typeToString(type)
   }
 
@@ -189,8 +291,13 @@ async function* genAPIDoc(toc) {
       const decl = prop.getDeclarations()[0]
       if (limitToSourceFile !== decl.getSourceFile()) continue  // not from this project
 
-      const type = checker.getTypeAtLocation(decl)
-      const name = prop.getName()
+      let type = checker.getTypeAtLocation(decl)
+      let name = prop.getName()
+      if (type.isUnion() && type.types.some(subType => subType.flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Null))) {
+        name += '?'
+        type = type.getNonNullableType()
+      }
+
       const doc = indent(joinText(prop.getDocumentationComment()), '  ', '— ')
       ans.push(`- **${name}**: \`${checker.typeToString(type)}\` ${doc}`)
     }

@@ -7,6 +7,9 @@ type GeneratedFunction<ArgNames extends any[], Result = any> = (...args: Unknown
 
 /**
  * like `new Function` but with more reasonable options and api
+ * 
+ * @param args - a string array of argument names
+ * @param code - the function body
  */
 export function newFunction<
   ArgNames extends string[] = string[],

@@ -8,6 +8,9 @@ export function is(x: any, y: any) {
   return x !== x && y !== y;
 }
 
+/**
+ * @param depth - defaults to 1
+ */
 export function shallowEqual(objA: any, objB: any, depth = 1) {
   if (is(objA, objB)) return true;
 

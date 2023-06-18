@@ -20,8 +20,8 @@ import { clsx } from "./clsx.js";
  * @param {Object} [attrs] - attribute values to be set. beware:
  *  - `onClick` and a `function` value, will be handled by `addEventListener()`
  *  - `!onClick` or `onClick.capture` will make it capture
- *  - `style` supports passing in an object
- *  - `class` value will be process by `clsx()`
+ *  - `style` value could be a string or object
+ *  - `class` value could be a string, object or array, and will be process by `clsx()`
  *  - `className` is alias of `class`
  * @param {Array<any>} [children] - can be strings, numbers, nodes. other types or nils will be omitted.
  */
