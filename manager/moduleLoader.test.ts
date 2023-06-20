@@ -1,5 +1,5 @@
 import { describe, expect, vi, it } from "vitest";
-import { ModuleLoader } from "./moduleLoader.js";
+import { CircularDependencyError, ModuleLoader } from "./moduleLoader.js";
 
 /** 
  *         father   mother
@@ -13,7 +13,7 @@ import { ModuleLoader } from "./moduleLoader.js";
 describe('moduleLoader', () => {
   it('works in sync', () => {
     const loader = new ModuleLoader<string>({
-      handleLoad(query, load) {
+      resolve(query, load) {
         if (query === 'father') return 'John'
         if (query === 'mother') return 'Mary'
         if (query === 'mom') return load('mother') // simply return the PromiseEx
@@ -40,13 +40,13 @@ describe('moduleLoader', () => {
     loader.cache.clear(); expect(loader.load('family').value).toBe('Tom, John and Mary')
     loader.cache.clear(); expect(loader.load('intro1').value).toBe('Tom is from Tom, John and Mary')
 
-    loader.cache.clear(); expect(() => loader.load('loop').value).toThrowError('circular')
-    loader.cache.clear(); expect(() => loader.load('loop2').value).toThrowError('circular')
+    loader.cache.clear(); expect(() => loader.load('loop').value).toThrowError(CircularDependencyError)
+    loader.cache.clear(); expect(() => loader.load('loop2').value).toThrowError(CircularDependencyError)
   });
 
   it('works in async', async () => {
     const loader = new ModuleLoader<string>({
-      async handleLoad(query, load) {
+      async resolve(query, load) {
         if (query === 'father') return 'John'
         if (query === 'mother') return 'Mary'
         if (query === 'mom') return load('mother') // simply return the PromiseEx
@@ -73,8 +73,8 @@ describe('moduleLoader', () => {
     loader.cache.clear(); expect(await loader.load('family')).toBe('Tom, John and Mary')
     loader.cache.clear(); expect(await loader.load('intro1')).toBe('Tom is from Tom, John and Mary')
 
-    loader.cache.clear(); await expect(() => loader.load('loop')).rejects.toThrowError('circular')
-    loader.cache.clear(); await expect(() => loader.load('loop2')).rejects.toThrowError('circular')
+    loader.cache.clear(); await expect(() => loader.load('loop')).rejects.toThrowError(CircularDependencyError)
+    loader.cache.clear(); await expect(() => loader.load('loop2')).rejects.toThrowError(CircularDependencyError)
   });
 });
 

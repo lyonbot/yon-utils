@@ -10,7 +10,7 @@ export type ModuleLoaderCache<T = any> = {
 }
 
 export interface ModuleLoaderSource<T> {
-  handleLoad(query: Query, load: (target: Query) => PromiseEx<T>): MaybePromise<T>
+  resolve(query: Query, load: (target: Query) => PromiseEx<T>): MaybePromise<T>
   cache?: ModuleLoaderCache
 }
 
@@ -22,7 +22,7 @@ export interface ModuleLoaderSource<T> {
  * ```js
  * const loader = new ModuleLoader({
  *   // sync example
- *   handleLoad(query, load) {
+ *   resolve(query, load) {
  *     if (query === 'father') return 'John'
  *     if (query === 'mother') return 'Mary'
  * 
@@ -47,7 +47,7 @@ export interface ModuleLoaderSource<T> {
  * ```js
  * const loader = new ModuleLoader({
  *   // async example
- *   async handleLoad(query, load) {
+ *   async resolve(query, load) {
  *     if (query === 'father') return 'John'
  *     if (query === 'mother') return 'Mary'
  * 
@@ -86,7 +86,7 @@ export class ModuleLoader<T> {
 
   private internalLoad(query: Query, queryStack: Query[]): PromiseEx<T> {
     function throwCircularReferenceError(): never {
-      throw new Error('Meet circular aliasOf loop: ' + queryStack.join(' -> ') + ' ?> ' + query)
+      throw new CircularDependencyError(query, queryStack)
     }
 
     let memory = this.cache.get(query)!;
@@ -103,8 +103,8 @@ export class ModuleLoader<T> {
     // ----------------------------------------------------------------
     // not cached yet. start loading!
 
-    const promise = maybeAsync(() => this.source.handleLoad(query, (q) => {
-      if (q === query) throw new Error('Meet circular loop: cannot depend self')
+    const promise = maybeAsync(() => this.source.resolve(query, (q) => {
+      if (q === query) throwCircularReferenceError()
 
       if (!memory.dependencies) memory.dependencies = [q]
       else if (!memory.dependencies.includes(q)) memory.dependencies.push(q)
@@ -128,5 +128,25 @@ export class ModuleLoader<T> {
 
     if (q.status === 'fulfilled') return maybeAsync(getResult)
     return maybeAsync(q.then(getResult))
+  }
+}
+
+/**
+ * The circular dependency Error that `ModuleLoader` might throw.
+ */
+export class CircularDependencyError extends Error {
+  /** the module that trying to be loaded. */
+  query: Query
+
+  /** the stack to traceback the loading progress.  */
+  queryStack: Query[]
+
+  /** always `'CircularDependencyError'` */
+  name = 'CircularDependencyError'
+
+  constructor(query: Query, queryStack: Query[]) {
+    super(`Meet circular dependency: ${queryStack.join(' -> ')} ?> ${query}`)
+    this.query = query
+    this.queryStack = queryStack.slice()
   }
 }

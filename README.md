@@ -22,7 +22,7 @@ All modules are shipped as ES modules and tree-shakable.
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
-| manager | [ModuleLoader](#fn-ModuleLoader) |
+| manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
 
 <br />
@@ -306,7 +306,7 @@ The suppressed call will return the running Promise, which is started before.
 ### `new ModuleLoader(source)`
 
 - **source**: `ModuleLoaderSource<T>` 
-  - **handleLoad**: `(query: string, load: (target: string) => PromiseEx<T>) => MaybePromise<T>` 
+  - **resolve**: `(query: string, load: (target: string) => PromiseEx<T>) => MaybePromise<T>` 
   
   - **cache?**: `ModuleLoaderCache<any>`
 
@@ -317,7 +317,7 @@ All-in-one ModuleLoader, support both sync and async mode, can handle circular d
 ```js
 const loader = new ModuleLoader({
   // sync example
-  handleLoad(query, load) {
+  resolve(query, load) {
     if (query === 'father') return 'John'
     if (query === 'mother') return 'Mary'
 
@@ -342,7 +342,7 @@ console.log(loader.load('family').value)  // don't forget .value
 ```js
 const loader = new ModuleLoader({
   // async example
-  async handleLoad(query, load) {
+  async resolve(query, load) {
     if (query === 'father') return 'John'
     if (query === 'mother') return 'Mary'
 
@@ -380,6 +380,36 @@ fetch a module
 get all direct dependencies of a module.
 
 note: to get reliable result, this will completely load the module and deep dependencies.
+
+<a id="fn-CircularDependencyError"></a>
+### `new CircularDependencyError(query, queryStack)`
+
+- **query**: `string`
+
+- **queryStack**: `string[]`
+
+The circular dependency Error that `ModuleLoader` might throw.
+
+#### CircularDependencyError # query
+- Type: `string`
+
+the module that trying to be loaded.
+
+#### CircularDependencyError # queryStack
+- Type: `string[]`
+
+the stack to traceback the loading progress.
+
+#### CircularDependencyError # name
+- Type: `string`
+
+always `'CircularDependencyError'`
+
+#### CircularDependencyError # message
+- Type: `string`
+
+#### CircularDependencyError # stack
+- Type: `string | undefined`
 
 <br />
 
