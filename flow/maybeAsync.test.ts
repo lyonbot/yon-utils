@@ -18,6 +18,7 @@ describe('maybeAsync', () => {
 
     expect(promise1.status).toBe("rejected")
     expect(promise1.reason).toBe(mockError);
+    expect(() => promise1.value).toThrow()
 
     await expect(promise1).rejects.toBe(mockError)
   });
@@ -44,5 +45,6 @@ describe('maybeAsync', () => {
     await expect(promise1).rejects.toBe(mockError)
     expect(promise1.status).toBe("rejected")
     expect(promise1.reason).toBe(mockError);
+    expect(() => promise1.value).toThrow()
   });
 });
