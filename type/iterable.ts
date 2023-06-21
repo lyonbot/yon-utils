@@ -1,4 +1,6 @@
-export type OneOrMany<T> = Iterable<T | null | undefined> | T | null | undefined
+import { Nil } from "./types.js";
+
+export type OneOrMany<T> = Iterable<T | Nil> | T | Nil
 
 /**
  * Input anything, always return an array.
@@ -22,7 +24,7 @@ export type Predicate<T> = (value: T, index: number) => boolean;
 /**
  * Like `Array#find`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
  */
-export function find<T>(iterator: Iterable<T> | null | undefined, predicate: Predicate<T>): T | undefined {
+export function find<T>(iterator: Iterable<T> | Nil, predicate: Predicate<T>): T | undefined {
   if (!iterator) return;
 
   let index = 0;
@@ -35,7 +37,7 @@ export function find<T>(iterator: Iterable<T> | null | undefined, predicate: Pre
 /**
  * Like `Array#reduce`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
  */
-export function reduce<T, U>(iterator: Iterable<T> | null | undefined, initial: U, reducer: (agg: U, item: T, index: number) => U): U {
+export function reduce<T, U>(iterator: Iterable<T> | Nil, initial: U, reducer: (agg: U, item: T, index: number) => U): U {
   if (!iterator) return initial;
 
   let index = 0;
@@ -51,7 +53,7 @@ export function reduce<T, U>(iterator: Iterable<T> | null | undefined, initial: 
 /**
  * Take the first result from a Iterator
  */
-export function head<T>(iterator: Iterable<T> | null | undefined): T | undefined {
+export function head<T>(iterator: Iterable<T> | Nil): T | undefined {
   if (!iterator) return;
 
   const it = iterator[Symbol.iterator]();
@@ -67,7 +69,7 @@ export type CollectionOf<T> =
 /**
  * input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contains the `item`
  */
-export function contains<T>(collection: CollectionOf<T> | null | undefined, item: T): boolean {
+export function contains<T>(collection: CollectionOf<T> | Nil, item: T): boolean {
   if (!collection) return false;
   if (Array.isArray(collection)) return collection.includes(item);
   if ('has' in collection && typeof collection.has === 'function') return collection.has(item);

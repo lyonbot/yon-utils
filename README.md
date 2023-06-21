@@ -23,7 +23,7 @@ All modules are shipped as ES modules and tree-shakable.
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
 | manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) |
-| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) |
+| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) |
 
 <br />
 
@@ -143,11 +143,11 @@ button.addEventListener('pointerdown', event => {
 ### `fnQueue()`
 
 - Returns: `{ tap, call, queue }` 
-  - **tap**: `(...fns: Fn[]) => void` — add callbacks into the queue
+  - **tap**: `(...fns: (Fn<any, ARGS> | Falsy)[]) => void` — add callbacks into the queue
   
   - **call**: `(...args: ARGS) => void` — invoke all callbacks and clear the queue
   
-  - **queue**: `Fn[]` — the array of all tapped callbacks
+  - **queue**: `Fn<any, ARGS>[]` — the array of all tapped callbacks
 
 #### Example
 
@@ -442,16 +442,16 @@ the `Object.is` algorithm
 ## 🧩 type/function
 
 <a id="fn-newFunction"></a>
-### `newFunction(args, code, options?)`
+### `newFunction(argumentNames, functionBody, options?)`
 
-- **args**: `ArgNames` — a string array of argument names
+- **argumentNames**: `NameArray<ARGS>` — a `string[]` of argument names
 
-- **code**: `string` — the function body
+- **functionBody**: `string` — the function body
 
 - **options?**: `{ async?: boolean | undefined; }` 
   - **async?**: `boolean` — set to `true` if the code contains `await`, the new function will be an async function
 
-- Returns: `Fn`
+- Returns: `Fn<RESULT, ARGS>`
 
 like `new Function` but with more reasonable options and api
 
@@ -477,7 +477,7 @@ Finally before returning, all `null` and `undefined` will be omitted
 <a id="fn-find"></a>
 ### `find(iterator, predicate)`
 
-- **iterator**: `Iterable<T> | null | undefined`
+- **iterator**: `Nil | Iterable<T>`
 
 - **predicate**: `Predicate<T>`
 
@@ -488,7 +488,7 @@ Like `Array#find`, but the input could be a Iterator (for example, from generato
 <a id="fn-reduce"></a>
 ### `reduce(iterator, initial, reducer)`
 
-- **iterator**: `Iterable<T> | null | undefined`
+- **iterator**: `Nil | Iterable<T>`
 
 - **initial**: `U`
 
@@ -501,7 +501,7 @@ Like `Array#reduce`, but the input could be a Iterator (for example, from genera
 <a id="fn-head"></a>
 ### `head(iterator)`
 
-- **iterator**: `Iterable<T> | null | undefined`
+- **iterator**: `Nil | Iterable<T>`
 
 - Returns: `T | undefined`
 
@@ -510,7 +510,7 @@ Take the first result from a Iterator
 <a id="fn-contains"></a>
 ### `contains(collection, item)`
 
-- **collection**: `CollectionOf<T> | null | undefined`
+- **collection**: `Nil | CollectionOf<T>`
 
 - **item**: `T`
 
@@ -563,6 +563,19 @@ getVariableName('123abc')    // -> "_123abc"
 getVariableName('')          // -> "foobar"
 getVariableName('name', ['name', 'age'])    // -> "name2"
 ```
+
+<br />
+
+## 🧩 type/types
+
+<a id="fn-isNil"></a>
+### `isNil(obj)`
+
+- **obj**: `any`
+
+- Returns: `boolean`
+
+Tell if `obj` is null or undefined
 
 
 

@@ -17,7 +17,7 @@ describe('fnQueue', () => {
   });
 
   test('call method invokes all callbacks and clears the queue', () => {
-    const queue = fnQueue();
+    const queue = fnQueue<[arg0: string]>();
 
     const fn1 = jest.fn();
     const fn2 = jest.fn();
@@ -31,7 +31,8 @@ describe('fnQueue', () => {
     expect(fn2).toBeCalledWith("hello");
     expect(queue.queue).toHaveLength(0);
 
-    queue.call("world");
+    // @ts-expect-error
+    queue.call("world", 123);
     expect(fn1).toHaveBeenCalledTimes(1);
     expect(fn2).toHaveBeenCalledTimes(1);
   });
@@ -50,9 +51,7 @@ describe('fnQueue', () => {
   test('tap method throws if non-function argument is passed', () => {
     const queue = fnQueue();
 
-    // @ts-expect-error
     queue.tap(undefined)
-    // @ts-expect-error
     queue.tap(null)
     // @ts-expect-error
     queue.tap('invalid')

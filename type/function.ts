@@ -1,32 +1,31 @@
-type UnknownArray<ArgNames extends any[]>
-  = number extends ArgNames['length'] ? any[]
-  : ArgNames extends [] ? []
-  : ArgNames extends [any, ...infer R] ? [any, ...UnknownArray<R>]
-  : any[];
-type GeneratedFunction<ArgNames extends any[], Result = any> = (...args: UnknownArray<ArgNames>) => Result;
+import { Fn } from "./types.js";
+
+type ArgumentNameArray<ARGS, AGG extends any[]> =
+  | ARGS extends [] ? AGG
+  : ARGS extends [any, ...infer REST] ? ArgumentNameArray<REST, [...AGG, string]>
+  : string[]
+
+type NameArray<ARGS> = {} & ArgumentNameArray<ARGS, []> 
 
 /**
  * like `new Function` but with more reasonable options and api
  * 
- * @param args - a string array of argument names
- * @param code - the function body
+ * @param argumentNames - a `string[]` of argument names
+ * @param functionBody - the function body
  */
-export function newFunction<
-  ArgNames extends string[] = string[],
-  Fn extends GeneratedFunction<ArgNames> = GeneratedFunction<ArgNames>
->(
-  args: ArgNames,
-  code: string,
+export function newFunction<RESULT = any, ARGS extends any[] = any[]>(
+  argumentNames: NameArray<ARGS>,
+  functionBody: string,
   options?: {
     /** set to `true` if the code contains `await`, the new function will be an async function */
     async?: boolean
   },
 ) {
   if (!options) options = {};
-  if (options.async) code = `return (async()=>{\n${code}\n})()`;
+  if (options.async) functionBody = `return (async()=>{\n${functionBody}\n})()`;
 
   // -----------------------------------
 
-  const fn = new Function(...args, code) as Fn;
+  const fn = new Function(...argumentNames, functionBody) as Fn<RESULT, ARGS>;
   return fn;
 }

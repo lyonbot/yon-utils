@@ -1,3 +1,5 @@
+import { Fn, Falsy } from "../type/types.js";
+
 /**
  * @example
  * 
@@ -21,13 +23,11 @@
  * ```
  */
 export function fnQueue<ARGS extends any[] = any[]>() {
-  type Fn = (...args: ARGS) => any;
-
-  const queue = [] as Fn[];
+  const queue = [] as Fn<any, ARGS>[];
   return {
     /** add callbacks into the queue */
-    tap(...fns: Fn[]) {
-      queue.push(...fns.filter(f => typeof f === 'function'));
+    tap(...fns: (Fn<any, ARGS> | Falsy)[]) {
+      queue.push(...fns.filter(f => f && typeof f === 'function') as Fn[]);
     },
     
     /** invoke all callbacks and clear the queue */
