@@ -27,7 +27,7 @@ export function fnQueue<ARGS extends any[] = any[]>() {
   return {
     /** add callbacks into the queue */
     tap(...fns: Fn[]) {
-      queue.push(...fns);
+      queue.push(...fns.filter(f => typeof f === 'function'));
     },
     
     /** invoke all callbacks and clear the queue */
