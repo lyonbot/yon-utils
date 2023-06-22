@@ -88,7 +88,6 @@ export function forEach(objOrArray: any, iter: (value: any, key: any, whole: any
     return
   }
   for (const k of Object.keys(objOrArray)) {
-    if (!Object.hasOwnProperty.call(objOrArray, k)) continue;
     iter(objOrArray[k], k, objOrArray);
   }
 }
