@@ -1,4 +1,4 @@
-import { maybeAsync, PromiseEx } from "../flow/maybeAsync.js";
+import { maybeAsync, PromiseEx } from "../flow/promise.js";
 
 type Query = string
 type MaybePromise<T> = Promise<T> | T

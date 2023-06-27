@@ -8,8 +8,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "prepack": "npm run build",
+    "prepack": "npm run clean && npm run build",
     "prebuild": "node ./_builder/preproc.mjs",
+    "clean": "rm -f */*.d.ts */*.js || true",
     "build": "tsc",
     "test": "vitest",
     "coverage": "vitest run --coverage"

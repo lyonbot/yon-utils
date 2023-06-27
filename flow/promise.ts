@@ -1,3 +1,5 @@
+import type { Nil } from "../type/types.js";
+
 /**
  * a crafted Promise that exposes `{ status, value, reason }`
  * 
@@ -24,7 +26,7 @@ export class PromiseEx<T> extends Promise<T> {
     }
 
     super((_resolve, _reject) => {
-      const wrappedResolve = (result: T) => {
+      const wrappedResolve = (result: Awaited<T>) => {
         if (writingTo.status !== 'pending') return
         writingTo.status = 'fulfilled'
         writingTo.result = result
@@ -55,7 +57,7 @@ export class PromiseEx<T> extends Promise<T> {
             }
 
             // case 3: resolved sync
-            wrappedResolve(result as T)
+            wrappedResolve(result as Awaited<T>)
           }, wrappedReject
         )
       } catch (reason) {
@@ -115,6 +117,32 @@ export class PromiseEx<T> extends Promise<T> {
     })
   }
 
+  /**
+   * Like `then()` but immediately invoke callbacks, if this PromiseEx
+   * is already resolved / rejected.
+   */
+  thenImmediately<TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | Nil,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | Nil
+  ): PromiseEx<TResult1 | TResult2> {
+    return new PromiseEx<TResult1 | TResult2>((resolve, reject) => {
+      if (this.status === 'pending') {
+        resolve(this.then(onfulfilled, onrejected))
+        return
+      }
+
+      if (this.status === 'rejected') {
+        if (typeof onrejected === 'function') resolve(onrejected(this.reason))
+        else reject(this.reason)
+        return
+      }
+
+      const result = this.result
+      const ans = typeof onfulfilled === 'function' ? onfulfilled(result!) : result
+      resolve(ans as TResult1)
+    })
+  }
+
   static resolve(): PromiseEx<void>
   static resolve<T>(input: T): PromiseEx<T>
   static resolve<T>(input?: T | PromiseLike<T>) {
@@ -150,7 +178,7 @@ export class PromisePendingError extends Error {
  * @param input - your sync/async function to run, or just a value
  * @returns a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
  */
-export function maybeAsync<T>(input: T | Promise<T> | (() => T | Promise<T>)): PromiseEx<T> {
+export function maybeAsync<T>(input: T | Promise<T> | (() => T | Promise<T>)) {
   return new PromiseEx<Awaited<T>>(resolve => {
     // @ts-ignore
     if (typeof input === 'function') input = input();

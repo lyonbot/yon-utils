@@ -1,6 +1,19 @@
 # yon-utils
 
-Some utils that I repeated too many times. DRY!
+Some utils and remix that I repeated in many projects.
+
+This package includes some light-weight alternatives to packages like:
+
+our | is alternative to / remix of
+------- | ----------------- 
+[elt](#fn-elt) / [clsx](#fn-clsx) | clsx, classnames, h, hyperscript
+[maybeAsync](#fn-maybeAsync) / [makePromise](#fn-makePromise) / [PromiseEx](#fn-PromiseEx) | imperative-promise, bluebird
+[stringHash](#fn-stringHash) | cyrb53, murmurhash ...
+&lt;some lodash-like functions> | lodash
+
+There are also some interesting original utils like [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [getVariableName](#fn-getVariableName) etc. Feel free to explore!
+
+## QuickStart
 
 All modules are shipped as ES modules and tree-shakable.
 
@@ -23,7 +36,7 @@ All modules are shipped as ES modules and tree-shakable.
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [delay](#fn-delay) / [debouncePromise](#fn-debouncePromise) / [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [makePromise](#fn-makePromise) / [PromiseEx](#fn-PromiseEx) / [PromisePendingError](#fn-PromisePendingError) |
 | manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) |
-| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) |
+| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) / [isObject](#fn-isObject) |
 
 <br />
 
@@ -74,7 +87,7 @@ can be an alternative to `classnames()`. modified from [lukeed/clsx](https://git
 <a id="fn-elt"></a>
 ### `elt(tagName, attrs, ...children)`
 
-- **tagName**: `string` — for example `"div"`
+- **tagName**: `string` — for example `"div"` or `"button.my-btn"`
 
 - **attrs**: `any` — attribute values to be set. beware:
     - `onClick` and a `function` value, will be handled by `addEventListener()`
@@ -90,7 +103,15 @@ can be an alternative to `classnames()`. modified from [lukeed/clsx](https://git
 Make `document.createElement` easier
 
 ```js
-var button = elt('button', { class: 'myButton', onclick: () => alert('hi') }, 'Click Me!')
+var button = elt(
+  'button.myButton',   // tagName, optionally support .className and #id
+  {
+    title: "a magic button",
+    class: { isPrimary: xxx.xxx }, // className will be processed by clsx
+    onclick: () => alert('hi')
+  }, 
+  'Click Me!'
+)
 ```
 
 This function can be used as a [jsxFactory](https://www.typescriptlang.org/tsconfig#jsxFactory), aka [JSX pragma](https://www.gatsbyjs.com/blog/2019-08-02-what-is-jsx-pragma/).
@@ -265,7 +286,7 @@ sayHi.cleanup(); // no output
 
 - **input**: `T | Promise<T> | (() => T | Promise<T>)` — your sync/async function to run, or just a value
 
-- Returns: `PromiseEx<T>` — a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
+- Returns: `PromiseEx<Awaited<T>>` — a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
   - **status**: `"pending" | "fulfilled" | "rejected"` 
   
   - **reason**: `any` — if rejected, get the reason.
@@ -285,6 +306,9 @@ sayHi.cleanup(); // no output
   - **wait**: `(timeout: number) => Promise<T>` — wait for resolved / rejected. 
     
     optionally can set a timeout in milliseconds. if timeout, a `PromisePendingError` will be thrown
+  
+  - **thenImmediately**: `<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | Nil, onrejected?: Nil | ((reason: any) => TResult2 | PromiseLike<...>)) => PromiseEx<...>` — Like `then()` but immediately invoke callbacks, if this PromiseEx
+    is already resolved / rejected.
 
 Run the function, return a crafted Promise that exposes `status`, `value` and `reason`
 
@@ -379,6 +403,16 @@ equivalent to `.status === "pending"`
 wait for resolved / rejected. 
 
 optionally can set a timeout in milliseconds. if timeout, a `PromisePendingError` will be thrown
+
+#### PromiseEx # thenImmediately(onfulfilled?, onrejected?)
+- **onfulfilled?**: `(value: T) => TResult1 | PromiseLike<TResult1>`
+
+- **onrejected?**: `(reason: any) => TResult2 | PromiseLike<TResult2>`
+
+- Returns: `PromiseEx<TResult1 | TResult2>`
+
+Like `then()` but immediately invoke callbacks, if this PromiseEx
+is already resolved / rejected.
 
 </details>
 
@@ -685,6 +719,15 @@ getVariableName('name', ['name', 'age'])    // -> "name2"
 - Returns: `boolean`
 
 Tell if `obj` is null or undefined
+
+<a id="fn-isObject"></a>
+### `isObject(obj)`
+
+- **obj**: `any`
+
+- Returns: `false | "array" | "object"`
+
+Tell if `obj` is Array, Object or other(`false`)
 
 
 

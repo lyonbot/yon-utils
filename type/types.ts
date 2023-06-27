@@ -11,3 +11,10 @@ export type Fn<RET = any, ARGS extends any[] = any[]> = (...args: ARGS) => RET;
 export function isNil(obj: any): obj is Nil {
   return obj == null
 }
+
+/** Tell if `obj` is Array, Object or other(`false`) */
+export function isObject(obj: any) {
+  if (typeof obj !== "object" || !obj) return false;
+  if (Array.isArray(obj)) return 'array';
+  return 'object';
+}

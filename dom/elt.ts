@@ -6,7 +6,15 @@ import { clsx } from "./clsx.js";
  * Make `document.createElement` easier
  * 
  * ```js
- * var button = elt('button', { class: 'myButton', onclick: () => alert('hi') }, 'Click Me!')
+ * var button = elt(
+ *   'button.myButton',   // tagName, optionally support .className and #id
+ *   {
+ *     title: "a magic button",
+ *     class: { isPrimary: xxx.xxx }, // className will be processed by clsx
+ *     onclick: () => alert('hi')
+ *   }, 
+ *   'Click Me!'
+ * )
  * ```
  * 
  * This function can be used as a [jsxFactory](https://www.typescriptlang.org/tsconfig#jsxFactory), aka [JSX pragma](https://www.gatsbyjs.com/blog/2019-08-02-what-is-jsx-pragma/).
@@ -16,7 +24,7 @@ import { clsx } from "./clsx.js";
  * >
  * > var button = &lt;button class="myButton" onclick={...}>Click Me&lt;/button></code></pre>
  *
- * @param {string} tagName - for example `"div"`
+ * @param {string} tagName - for example `"div"` or `"button.my-btn"`
  * @param {Object} [attrs] - attribute values to be set. beware:
  *  - `onClick` and a `function` value, will be handled by `addEventListener()`
  *  - `!onClick` or `onClick.capture` will make it capture
@@ -28,7 +36,10 @@ import { clsx } from "./clsx.js";
 export function elt<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs: any, ...children: any[]): HTMLElementTagNameMap[K]
 export function elt(tagName: string, attrs: any, ...children: any[]): HTMLElement
 export function elt(tagName: string, attrs: any, ...children: any[]) {
-  const el = document.createElement(tagName);
+  const decorators = (tagName.includes('#') || tagName.includes('.')) && tagName.split(/(?=[#.])/g)
+  if (decorators) tagName = decorators.shift()!
+
+  const el = document.createElement(tagName.trim());
 
   if (attrs) {
     Object.keys(attrs).forEach((key) => {
@@ -59,6 +70,15 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
 
       el.setAttribute(key, String(value));
     });
+  }
+
+  // handle tag.className#id
+  if (decorators) {
+    for (let seg of decorators) {
+      seg = seg.trimEnd()
+      if (seg[0] === '#') el.id = seg.slice(1)
+      if (seg[0] === '.') el.className += (el.className && ' ') + seg.slice(1)
+    }
   }
 
   for (let i = 0; i < children.length; i++) {

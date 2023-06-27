@@ -87,8 +87,13 @@ async function* genAPIDoc(toc) {
       /**
        * @param {string} funcName
        * @param {ts.Signature} callSignature
+       * @param {Object} opts
+       * @param {(type: ts.Type) => boolean} [opts.listPropertiesOfType]
        */
-      function getMethodDoc(funcName, callSignature, extraJSDocTags = []) {
+      function getMethodDoc(funcName, callSignature, {
+        extraJSDocTags = [],
+        listPropertiesOfType,
+      }) {
         const decl = callSignature?.getDeclaration() // exact the FunctionLike expression or decl
         if (!decl) return null
 
@@ -135,7 +140,11 @@ async function* genAPIDoc(toc) {
           const decl = type.getSymbol()?.getDeclarations()?.[0]
           const doc = indent(returnDoc, '  ', '— ')
 
-          returnDoc = `Returns: \`${typeToString(type, decl)}\` ${doc}\n${propertiesToMarkdownList(decl, sf)}`.trim()
+          const subProperties = (!listPropertiesOfType || listPropertiesOfType(type))
+            ? propertiesToMarkdownList(decl, sf)
+            : ''
+
+          returnDoc = `Returns: \`${typeToString(type, decl)}\` ${doc}\n${subProperties}`.trim()
         }
 
         // generate params list
@@ -150,10 +159,11 @@ async function* genAPIDoc(toc) {
             type = type.getNonNullableType()
           }
 
-          return `**${name}**: \`${typeToString(type, decl)}\` ${doc}\n${propertiesToMarkdownList(
-            type?.getSymbol()?.getDeclarations()?.[0],
-            sf
-          ) || ''}`.trim()
+          const subProperties = (!listPropertiesOfType || listPropertiesOfType(type))
+            ? propertiesToMarkdownList(type?.getSymbol()?.getDeclarations()?.[0], sf)
+            : ''
+
+          return `**${name}**: \`${typeToString(type, decl)}\` ${doc}\n${subProperties}`.trim()
         })
 
         return {
@@ -189,7 +199,7 @@ async function* genAPIDoc(toc) {
         if (ts.isTypeNode(decl)) continue;  // ignore "type XXX = ..."
 
         const funcName = s.getName()
-        const parsed = getMethodDoc(funcName, callSignature, s.getJsDocTags())
+        const parsed = getMethodDoc(funcName, callSignature, { extraJSDocTags: s.getJsDocTags() })
         if (!parsed) continue;
 
         const { signatureText, returnDoc, exampleDoc, paramsDoc } = parsed
@@ -232,7 +242,12 @@ async function* genAPIDoc(toc) {
 
             let funcType = checker.getTypeOfSymbolAtLocation(s, decl)  // this temp "decl" could be a variableDeclarator
             let callSignature = funcType?.getCallSignatures().slice(-1)[0]
-            let parsed = getMethodDoc(s.getName(), callSignature, s.getJsDocTags())
+            let parsed = getMethodDoc(s.getName(), callSignature, {
+              extraJSDocTags: s.getJsDocTags(),
+              listPropertiesOfType(type) {
+                return type.aliasSymbol !== classType.aliasSymbol
+              }
+            })
             if (parsed) prettyName = parsed.signatureText
 
             yield `#### ${funcName} # ${prettyName}`
