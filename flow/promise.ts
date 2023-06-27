@@ -126,12 +126,15 @@ export class PromiseEx<T> extends Promise<T> {
   }
 }
 
+/**
+ * Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
+ */
 export class PromisePendingError extends Error {
   cause: Promise<any>
 
-  constructor(promise: Promise<any>) {
+  constructor(cause: Promise<any>) {
     super('Promise is pending')
-    this.cause = promise;
+    this.cause = cause;
   }
 }
 
@@ -156,7 +159,7 @@ export function maybeAsync<T>(input: T | Promise<T> | (() => T | Promise<T>)): P
 }
 
 /**
- * Create a Promise and take out its `resolve` and `reject` methods.
+ * Create an imperative Promise.
  * 
  * Returns a Promise with these 2 methods exposed, so you can control its behavior:
  * 
@@ -192,12 +195,14 @@ export function makePromise<T>() {
   const promise = new PromiseEx<T>((a, b) => {
     res = a;
     rej = b;
-  }) as PromiseEx<Awaited<T>> & {
-    resolve(result: T | PromiseLike<T>): void
-    reject(reason?: any): void
-  }
+  }) as ImperativePromiseEx<T>
 
   promise.resolve = res!;
   promise.reject = rej!
   return promise;
+}
+
+export type ImperativePromiseEx<T> = PromiseEx<Awaited<T>> & {
+  resolve(result: T | PromiseLike<T>): void
+  reject(reason?: any): void
 }

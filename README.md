@@ -295,9 +295,9 @@ Useful when you are not sure whether `fn` is async or not.
 <a id="fn-makePromise"></a>
 ### `makePromise()`
 
-- Returns: `PromiseEx<Awaited<T>> & { resolve(result: T | PromiseLike<T>): void; reject(reason?: any): void; }`
+- Returns: `ImperativePromiseEx<T>`
 
-Create a Promise and take out its `resolve` and `reject` methods.
+Create an imperative Promise.
 
 Returns a Promise with these 2 methods exposed, so you can control its behavior:
 
@@ -383,9 +383,11 @@ optionally can set a timeout in milliseconds. if timeout, a `PromisePendingError
 </details>
 
 <a id="fn-PromisePendingError"></a>
-### `new PromisePendingError(promise)`
+### `new PromisePendingError(cause)`
 
-- **promise**: `Promise<any>`
+- **cause**: `Promise<any>`
+
+Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
 
 <details>
 <summary>
