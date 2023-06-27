@@ -21,7 +21,7 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
-| flow | [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [delay](#fn-delay) / [makePromise](#fn-makePromise) / [debouncePromise](#fn-debouncePromise) |
+| flow | [delay](#fn-delay) / [debouncePromise](#fn-debouncePromise) / [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [makePromise](#fn-makePromise) / [PromiseEx](#fn-PromiseEx) / [PromisePendingError](#fn-PromisePendingError) |
 | manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) |
 
@@ -137,6 +137,28 @@ button.addEventListener('pointerdown', event => {
 
 <br />
 
+## 🧩 flow/flow
+
+<a id="fn-delay"></a>
+### `delay(milliseconds)`
+
+- **milliseconds**: `number`
+
+- Returns: `Promise<void>`
+
+<a id="fn-debouncePromise"></a>
+### `debouncePromise(fn)`
+
+- **fn**: `() => Promise<T>`
+
+- Returns: `() => Promise<T>`
+
+Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
+
+The suppressed call will return the running Promise, which is started before.
+
+<br />
+
 ## 🧩 flow/fnQueue
 
 <a id="fn-fnQueue"></a>
@@ -236,7 +258,7 @@ sayHi.cleanup(); // no output
 
 <br />
 
-## 🧩 flow/maybeAsync
+## 🧩 flow/promise
 
 <a id="fn-maybeAsync"></a>
 ### `maybeAsync(input)`
@@ -244,6 +266,25 @@ sayHi.cleanup(); // no output
 - **input**: `T | Promise<T> | (() => T | Promise<T>)` — your sync/async function to run, or just a value
 
 - Returns: `PromiseEx<T>` — a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
+  - **status**: `"pending" | "fulfilled" | "rejected"` 
+  
+  - **reason**: `any` — if rejected, get the reason.
+  
+  - **result?**: `NonNullable<T>` — get result, or nothing if not fulfilled.
+    
+    note: you might need `.value` which follows **fail-fast mentality**
+  
+  - **loading**: `boolean` — equivalent to `.status === "pending"`
+  
+  - **value?**: `NonNullable<T>` — **fail-fast mentality**, safely get the result.
+    
+    - if pending, throw `new PromisePendingError(this)`
+    - if rejected, throw `.reason`
+    - if fulfilled, get `.result`
+  
+  - **wait**: `(timeout: number) => Promise<T>` — wait for resolved / rejected. 
+    
+    optionally can set a timeout in milliseconds. if timeout, a `PromisePendingError` will be thrown
 
 Run the function, return a crafted Promise that exposes `status`, `value` and `reason`
 
@@ -251,31 +292,27 @@ If `input` is sync function, its result will be stored in `promise.value` and `p
 
 Useful when you are not sure whether `fn` is async or not.
 
-<br />
-
-## 🧩 flow/promise
-
-<a id="fn-delay"></a>
-### `delay(milliseconds)`
-
-- **milliseconds**: `number`
-
-- Returns: `Promise<void>`
-
 <a id="fn-makePromise"></a>
 ### `makePromise()`
 
-- Returns: `PromiseHandle<T>` 
-  - **resolve**: `(value: T) => void` — make this Promise resolved / fulfilled with given value
-  
-  - **reject**: `(reason: any) => void` — make this Promise rejected with given reason / error.
-  
-  - **wait**: `(timeout?: number | undefined) => Promise<T>` — wait for result. optionally can set a timeout in milliseconds.
-  
-  - **peek**: `() => PromisePeekResult<T>` — check the Promise's status 
-    - returns `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
+- Returns: `PromiseEx<Awaited<T>> & { resolve(result: T | PromiseLike<T>): void; reject(reason?: any): void; }`
 
 Create a Promise and take out its `resolve` and `reject` methods.
+
+Returns a Promise with these 2 methods exposed, so you can control its behavior:
+
+- `.resolve(result)`
+- `.reject(error)`
+
+Besides, the returned Promise will expose these useful properties
+so you can get its status easily:
+ 
+- `.wait([timeout])` — wait for result, plus timeout guard
+- `.status` — could be `"pending" | "fulfilled" | "rejected"`
+- `.result` and `.reason`
+- `.value` — fail-safe get result
+
+Note that calling `wait(timeout)` and accessing `value` could throw a `PromisePendingError`
 
 #### Example
 
@@ -284,19 +321,81 @@ const handler = makePromise();
 
 doSomeRequest(..., result => handler.resolve(result));
 
-const result = await handler.wait();
+// wait with timeout
+const result = await handler.wait(1000);
+
+// or just await
+const result = await handler;
 ```
 
-<a id="fn-debouncePromise"></a>
-### `debouncePromise(fn)`
+<a id="fn-PromiseEx"></a>
+### `new PromiseEx(executor)`
 
-- **fn**: `() => Promise<T>`
+- **executor**: `(resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void`
 
-- Returns: `() => Promise<T>`
+a crafted Promise that exposes `{ status, value, reason }`
 
-Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
+Note: please use `maybeAsync()` or `PromiseEx.resolve()` to create a PromiseEx
 
-The suppressed call will return the running Promise, which is started before.
+<details>
+<summary>
+<em>📖 show members of <code>PromiseEx</code> &raquo;</em>
+</summary>
+
+#### PromiseEx # status
+- Type: `"pending" | "fulfilled" | "rejected"`
+
+#### PromiseEx # reason
+- Type: `any`
+
+if rejected, get the reason.
+
+#### PromiseEx # result
+- Type: `T | undefined`
+
+get result, or nothing if not fulfilled.
+
+note: you might need `.value` which follows **fail-fast mentality**
+
+#### PromiseEx # loading
+- Type: `boolean`
+
+equivalent to `.status === "pending"`
+
+#### PromiseEx # value
+- Type: `T | undefined`
+
+**fail-fast mentality**, safely get the result.
+
+- if pending, throw `new PromisePendingError(this)`
+- if rejected, throw `.reason`
+- if fulfilled, get `.result`
+
+#### PromiseEx # wait(timeout)
+- **timeout**: `number`
+
+- Returns: `Promise<T>`
+
+wait for resolved / rejected. 
+
+optionally can set a timeout in milliseconds. if timeout, a `PromisePendingError` will be thrown
+
+</details>
+
+<a id="fn-PromisePendingError"></a>
+### `new PromisePendingError(promise)`
+
+- **promise**: `Promise<any>`
+
+<details>
+<summary>
+<em>📖 show members of <code>PromisePendingError</code> &raquo;</em>
+</summary>
+
+#### PromisePendingError # cause
+- Type: `Promise<any>`
+
+</details>
 
 <br />
 
@@ -362,6 +461,11 @@ const loader = new ModuleLoader({
 console.log(await loader.load('family'))  // no need `.value` with `await`
 ```
 
+<details>
+<summary>
+<em>📖 show members of <code>ModuleLoader</code> &raquo;</em>
+</summary>
+
 #### ModuleLoader # cache
 - Type: `ModuleLoaderCache<{ dependencies?: string[] | undefined; promise: PromiseEx<T>; }>`
 
@@ -381,6 +485,8 @@ get all direct dependencies of a module.
 
 note: to get reliable result, this will completely load the module and deep dependencies.
 
+</details>
+
 <a id="fn-CircularDependencyError"></a>
 ### `new CircularDependencyError(query, queryStack)`
 
@@ -389,6 +495,11 @@ note: to get reliable result, this will completely load the module and deep depe
 - **queryStack**: `string[]`
 
 The circular dependency Error that `ModuleLoader` might throw.
+
+<details>
+<summary>
+<em>📖 show members of <code>CircularDependencyError</code> &raquo;</em>
+</summary>
 
 #### CircularDependencyError # query
 - Type: `string`
@@ -405,11 +516,7 @@ the stack to traceback the loading progress.
 
 always `'CircularDependencyError'`
 
-#### CircularDependencyError # message
-- Type: `string`
-
-#### CircularDependencyError # stack
-- Type: `string | undefined`
+</details>
 
 <br />
 

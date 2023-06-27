@@ -220,11 +220,15 @@ async function* genAPIDoc(toc) {
         const classType = !!isClass && callSignature.getReturnType()
         if (classType && classType.isClass()) {
           // yield '#### Class ' + funcName;
+          yield '<details>'
+          yield '<summary>\n<em>📖 show members of <code>' + funcName + '</code> &raquo;</em>\n</summary>'
+          yield ''
           for (const s of classType.getProperties()) {
             let prettyName = s.getName()
 
             let decl = s.getDeclarations()[0]
             if (ts.getCombinedModifierFlags(decl) & ts.ModifierFlags.Private) continue;
+            if (decl.getSourceFile() !== sf) continue;  // maybe inherited from stdlib?
 
             let funcType = checker.getTypeOfSymbolAtLocation(s, decl)  // this temp "decl" could be a variableDeclarator
             let callSignature = funcType?.getCallSignatures().slice(-1)[0]
@@ -246,6 +250,8 @@ async function* genAPIDoc(toc) {
             yield joinText(s.getDocumentationComment())
             yield ''
           }
+          yield '';
+          yield '</details>'
           yield '';
         }
 
