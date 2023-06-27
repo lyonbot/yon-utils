@@ -43,12 +43,15 @@ export class PromiseEx<T> extends Promise<T> {
       try {
         executor(
           (result) => {
-            // case 1: result could be PromiseEx
-            if (result instanceof PromiseEx) {
-              writingTo.status = result.status
-              writingTo.reason = result.reason
-              writingTo.result = result.result
-              return _resolve(result)
+            // case 1: result could be a finished PromiseEx
+            if (result instanceof PromiseEx && result.status !== 'pending') {
+              if ((writingTo.status = result.status) === 'fulfilled') {
+                _resolve(writingTo.result = result.result)
+              } else {
+                result.catch(() => 0) // inherit the rejection
+                _reject(writingTo.reason = result.reason)
+              }
+              return
             }
 
             // case 2: result could be Promise
@@ -144,7 +147,7 @@ export class PromiseEx<T> extends Promise<T> {
   }
 
   static resolve(): PromiseEx<void>
-  static resolve<T>(input: T): PromiseEx<T>
+  static resolve<T>(input: T): PromiseEx<Awaited<T>>
   static resolve<T>(input?: T | PromiseLike<T>) {
     return new PromiseEx<Awaited<T>>(resolve => resolve(input as any))
   }
