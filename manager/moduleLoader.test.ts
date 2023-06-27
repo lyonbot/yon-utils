@@ -13,7 +13,7 @@ import { CircularDependencyError, ModuleLoader } from "./moduleLoader.js";
 describe('moduleLoader', () => {
   it('works in sync', () => {
     const loader = new ModuleLoader<string>({
-      resolve(query, load) {
+      resolve(query, { load }) {
         if (query === 'father') return 'John'
         if (query === 'mother') return 'Mary'
         if (query === 'mom') return load('mother') // simply return the PromiseEx
@@ -46,7 +46,7 @@ describe('moduleLoader', () => {
 
   it('works in async', async () => {
     const loader = new ModuleLoader<string>({
-      async resolve(query, load) {
+      async resolve(query, { load }) {
         if (query === 'father') return 'John'
         if (query === 'mother') return 'Mary'
         if (query === 'mom') return load('mother') // simply return the PromiseEx

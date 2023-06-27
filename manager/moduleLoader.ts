@@ -6,11 +6,29 @@ type MaybePromise<T> = Promise<T> | T
 export type ModuleLoaderCache<T = any> = {
   get(query: Query): T;
   set(query: Query, value: T): any;
+  delete(query: Query): any;
   clear(): void;
 }
 
 export interface ModuleLoaderSource<T> {
-  resolve(query: Query, load: (target: Query) => PromiseEx<T>): MaybePromise<T>
+  /**
+   * You must implement a loader function. It parse `query` and returns the module content.
+   * 
+   * 1. It could be synchronous or asynchronous, depends on your scenario.
+   * 2. You can use `load()` from `ctx` to load dependencies. Example: `await load("common")` or `load("common").value`
+   * 3. All queries are cached by default. To bypass it, use `ctx.noCache`. Example: `return noCache("404: not found")`
+   */
+  resolve(query: Query, ctx: {
+    /**
+     * load another module - might load from cache
+     */
+    load(target: Query): PromiseEx<T>
+
+    /**
+     * mark this query result not-cached. example: `return noCache("404: not found")`
+     */
+    noCache<T>(value: T): T
+  }): MaybePromise<T>
   cache?: ModuleLoaderCache
 }
 
@@ -22,7 +40,7 @@ export interface ModuleLoaderSource<T> {
  * ```js
  * const loader = new ModuleLoader({
  *   // sync example
- *   resolve(query, load) {
+ *   resolve(query, { load }) {
  *     if (query === 'father') return 'John'
  *     if (query === 'mother') return 'Mary'
  * 
@@ -47,7 +65,7 @@ export interface ModuleLoaderSource<T> {
  * ```js
  * const loader = new ModuleLoader({
  *   // async example
- *   async resolve(query, load) {
+ *   async resolve(query, { load }) {
  *     if (query === 'father') return 'John'
  *     if (query === 'mother') return 'Mary'
  * 
@@ -103,13 +121,23 @@ export class ModuleLoader<T> {
     // ----------------------------------------------------------------
     // not cached yet. start loading!
 
-    const promise = maybeAsync(() => this.source.resolve(query, (q) => {
-      if (q === query) throwCircularReferenceError()
+    let noCacheSuppressed = false;
+    const promise = maybeAsync(() => this.source.resolve(query, {
+      load: (q) => {
+        if (q === query) throwCircularReferenceError()
 
-      if (!memory.dependencies) memory.dependencies = [q]
-      else if (!memory.dependencies.includes(q)) memory.dependencies.push(q)
+        if (!memory.dependencies) memory.dependencies = [q]
+        else if (!memory.dependencies.includes(q)) memory.dependencies.push(q)
 
-      return this.internalLoad(q, queryStack)
+        return this.internalLoad(q, queryStack)
+      },
+      noCache: (value) => {
+        if (!noCacheSuppressed) {
+          noCacheSuppressed = true;
+          Promise.resolve().then(() => promise).finally(() => this.cache.delete(query))
+        }
+        return value
+      },
     }))
 
     return (memory.promise = promise)
@@ -121,13 +149,9 @@ export class ModuleLoader<T> {
    * note: to get reliable result, this will completely load the module and deep dependencies.
    */
   getDependencies(query: Query): PromiseEx<Query[]> {
-    const q = this.load(query) // make a query and finish it
-    const getResult = () => {
-      return this.cache.get(query).dependencies || []
-    }
-
-    if (q.status === 'fulfilled') return maybeAsync(getResult)
-    return maybeAsync(q.then(getResult))
+    return this
+      .load(query)
+      .thenImmediately(() => this.cache.get(query).dependencies || [])
   }
 }
 

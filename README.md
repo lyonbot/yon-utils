@@ -441,7 +441,11 @@ Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
 ### `new ModuleLoader(source)`
 
 - **source**: `ModuleLoaderSource<T>` 
-  - **resolve**: `(query: string, load: (target: string) => PromiseEx<T>) => MaybePromise<T>` 
+  - **resolve**: `(query: string, ctx: { load(target: string): PromiseEx<T>; noCache<T>(value: T): T; }) => MaybePromise<T>` — You must implement a loader function. It parse `query` and returns the module content.
+    
+    1. It could be synchronous or asynchronous, depends on your scenario.
+    2. You can use `load()` from `ctx` to load dependencies. Example: `await load("common")` or `load("common").value`
+    3. All queries are cached by default. To bypass it, use `ctx.noCache`. Example: `return noCache("404: not found")`
   
   - **cache?**: `ModuleLoaderCache<any>`
 
@@ -452,7 +456,7 @@ All-in-one ModuleLoader, support both sync and async mode, can handle circular d
 ```js
 const loader = new ModuleLoader({
   // sync example
-  resolve(query, load) {
+  resolve(query, { load }) {
     if (query === 'father') return 'John'
     if (query === 'mother') return 'Mary'
 
@@ -477,7 +481,7 @@ console.log(loader.load('family').value)  // don't forget .value
 ```js
 const loader = new ModuleLoader({
   // async example
-  async resolve(query, load) {
+  async resolve(query, { load }) {
     if (query === 'father') return 'John'
     if (query === 'mother') return 'Mary'
 
