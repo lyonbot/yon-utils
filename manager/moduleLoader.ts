@@ -4,7 +4,7 @@ type Query = string
 type MaybePromise<T> = Promise<T> | T
 
 export type ModuleLoaderCache<T = any> = {
-  get(query: Query): T;
+  get(query: Query): T | undefined;
   set(query: Query, value: T): any;
   delete(query: Query): any;
   clear(): void;
@@ -148,10 +148,26 @@ export class ModuleLoader<T> {
    * 
    * note: to get reliable result, this will completely load the module and deep dependencies.
    */
-  getDependencies(query: Query): PromiseEx<Query[]> {
+  getDependencies(query: Query, deep = false): PromiseEx<Query[]> {
     return this
       .load(query)
-      .thenImmediately(() => this.cache.get(query).dependencies || [])
+      .thenImmediately(() => {
+        if (!deep) return this.cache.get(query)!.dependencies || []
+
+        const visited = new Set<Query>()
+        const pending = [query]
+
+        while (pending.length) {
+          const subQuery = pending.shift()!
+          if (visited.has(subQuery)) continue
+          visited.add(subQuery)
+          
+          const subDeps = this.cache.get(subQuery)?.dependencies
+          if (subDeps) pending.push(...subDeps)
+        }
+
+        return Array.from(visited).slice(1) // first is always "query"
+      })
   }
 }
 
