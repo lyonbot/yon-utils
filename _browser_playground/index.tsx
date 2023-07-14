@@ -2,7 +2,7 @@
 import { elt, readClipboard, startMouseMove, writeClipboard } from "yon-utils";
 function log(...args: any[]): void {
   console.log(...args);
-  document.getElementById('logger')!.textContent += args.join('\t') + '\n'
+  (document.getElementById('logger') as HTMLTextAreaElement).value += args.join('\t') + '\n'
 }
 
 // ----------------------------------------------------------------
