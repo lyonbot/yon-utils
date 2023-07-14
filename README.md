@@ -35,7 +35,7 @@ All modules are shipped as ES modules and tree-shakable.
 |---------|:--------|
 | dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
 | flow | [delay](#fn-delay) / [debouncePromise](#fn-debouncePromise) / [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [makePromise](#fn-makePromise) / [PromiseEx](#fn-PromiseEx) / [PromisePendingError](#fn-PromisePendingError) |
-| manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) |
+| manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) / [getSearchMatcher](#fn-getSearchMatcher) |
 | type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) / [isObject](#fn-isObject) |
 
 <br />
@@ -516,8 +516,10 @@ console.log(await loader.load('family'))  // no need `.value` with `await`
 
 fetch a module
 
-#### ModuleLoader # getDependencies(query)
+#### ModuleLoader # getDependencies(query, deep?)
 - **query**: `string`
+
+- **deep?**: `boolean`
 
 - Returns: `PromiseEx<string[]>`
 
@@ -557,6 +559,46 @@ the stack to traceback the loading progress.
 always `'CircularDependencyError'`
 
 </details>
+
+<br />
+
+## 🧩 manager/simpleSearch
+
+<a id="fn-getSearchMatcher"></a>
+### `getSearchMatcher(keyword)`
+
+- **keyword**: `string`
+
+- Returns: `{ test, filter, filterEx }` 
+  - **test**: `(record: any) => number` — test one record and tell if it matches.
+    
+    the `record` could be a string, array and object(only values will be tested).
+    
+    will return `0` for not matched, `1` for fuzzy matched, `> 1` for partially accurately matched
+  
+  - **filter**: `FilterFunction` — filter a list and get the sorted search result.
+    
+    returns `Array<{ item, score, index, key }>`. if your input is a Map or Object, `key` will be helpful.
+    
+    also see `filter` if you only want a list of item values.
+  
+  - **filterEx**: `FilterExFunction` — filter a list and get the sorted search result with extra information.
+    
+    returns an array that only contains item values.
+    
+    also see `filterEx` if want more information
+
+Simple utility to start searching
+
+#### Example
+
+```js
+// note: items can be object / array / array of objects ...
+const items = ['Alice', 'Lichee', 'Bob'];
+
+const result = getSearchMatcher('lic').filter(items);
+// -> ['Lichee', 'Alice']
+```
 
 <br />
 
