@@ -15,6 +15,8 @@ There are also some interesting original utils like [shallowEqual](#fn-shallowEq
 
 ## QuickStart
 
+[Play in CodeSandbox](https://codesandbox.io/s/yon-utils-playground-xwh4qt)
+
 All modules are shipped as ES modules and tree-shakable.
 
 - via package manager
