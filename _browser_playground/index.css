@@ -1,0 +1,6 @@
+.draggableBox {
+  background: #eee;
+  padding: 20px;
+  cursor: move;
+  border: 2px solid #333;
+}

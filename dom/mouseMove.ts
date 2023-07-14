@@ -45,7 +45,7 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
   const root: Document = initialEvent.target?.getRootNode() || document;
   const sinceTime = Date.now();
 
-  let focusedPointerId!: number | false
+  let focusedPointerId: number | false = false;
   let oX = 0;
   let oY = 0;
 

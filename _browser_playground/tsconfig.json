@@ -8,7 +8,11 @@
     "isolatedModules": true,
     "declaration": true,
     "skipLibCheck": true,
+    "paths": {
+      "yon-utils": ["./../index.d.ts"],
+      "yon-utils/*": ["./../*"]
+    }
   },
   "include": ["./**/*.ts", "./**/*.tsx"],
-  "exclude": ["node_modules", "./vitest.config.ts", "./_browser_playground"]
+  "exclude": ["node_modules"]
 }

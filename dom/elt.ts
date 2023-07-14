@@ -58,7 +58,10 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
 
       // "style"
       if (key === 'style' && typeof value === 'object') {
-        Object.assign(el.style, value)
+        Object.entries(value).forEach(([k, v]) => {
+          if (typeof v === 'number') v = v + 'px'
+          el.style[k as any] = v as string;
+        });
         return;
       }
 
@@ -83,8 +86,9 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
     const child = children[i];
     if (Array.isArray(child)) { children.splice(i--, 1, ...child); continue }
     if (!child && child !== 0) continue
+
     if (child instanceof Node) el.appendChild(child);
-    el.appendChild(document.createTextNode(String(child)))
+    else el.appendChild(document.createTextNode(String(child)))
   }
 
   return el;
