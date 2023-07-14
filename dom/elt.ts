@@ -48,9 +48,9 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
       if (value === true) value = '';
 
       // "onXXXX" events
-      let evtMat = typeof value === 'function' && /^(!?)on([\w-]+)(\.capture)?/.exec(key)
+      let evtMat = typeof value === 'function' && /^(!?)on([\w-]+)([._]capture)?$/.exec(key)
       if (evtMat) {
-        const evtName = evtMat[2].slice(2).toLowerCase();
+        const evtName = evtMat[2].toLowerCase();
         const capture = !!(evtMat[1] || evtMat[3])
         el.addEventListener(evtName, value, capture);
         return;
@@ -58,9 +58,7 @@ export function elt(tagName: string, attrs: any, ...children: any[]) {
 
       // "style"
       if (key === 'style' && typeof value === 'object') {
-        Object.keys(value).forEach((k) => {
-          el.style[k as any] = value[k];
-        });
+        Object.assign(el.style, value)
         return;
       }
 
