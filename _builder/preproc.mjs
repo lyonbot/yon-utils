@@ -5,7 +5,7 @@ import glob from 'glob';
 
 const root = resolve(dirname(import.meta.url.slice('file://'.length)), '..')
 const files = glob.sync('*/*.ts', {
-  ignore: ['node_modules/**/*', '*/*.{test,spec,stories,story}.*', '*/*.d.ts', '*/index.ts'],
+  ignore: ['node_modules/**/*', '*/*.{test,spec,stories,story}.*', '*/*.d.ts', '*/index.ts', '_browser_playground/**/*'],
   root,
 })
 
