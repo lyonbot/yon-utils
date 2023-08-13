@@ -106,3 +106,4 @@ dist
 # built
 [!_]*/*.js
 [!_]*/*.d.ts
+/index.bundle.cjs
