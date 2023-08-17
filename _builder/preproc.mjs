@@ -63,7 +63,7 @@ newMarkdown =
 
 | module | methods |
 |---------|:--------|
-${Object.entries(toc).map(([dir, items]) => `| ${dir} | ${items.map(x => `[${x}](#fn-${x})`).join(' / ')} |`).join('\n')}
+${Object.entries(toc).map(([dir, items]) => `| ${dir} | ${items.map(x => `[${x}](#-${x.toLowerCase()})`).join(' / ')} |`).join('\n')}
 
 ${newMarkdown}
 ${markdownEnd}`
@@ -205,7 +205,7 @@ async function* genAPIDoc(toc) {
         const { signatureText, returnDoc, exampleDoc, paramsDoc } = parsed
 
         toc[dir].push(funcName)
-        yield `<a id="fn-${funcName}"></a>`
+        // yield `<a id="fn-${funcName}"></a>`
         yield `### \`${isClass}${signatureText}\``
         yield ''
 

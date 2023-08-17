@@ -35,16 +35,15 @@ All modules are shipped as ES modules and tree-shakable.
 
 | module | methods |
 |---------|:--------|
-| dom | [writeClipboard](#fn-writeClipboard) / [readClipboard](#fn-readClipboard) / [clsx](#fn-clsx) / [elt](#fn-elt) / [startMouseMove](#fn-startMouseMove) |
-| flow | [delay](#fn-delay) / [debouncePromise](#fn-debouncePromise) / [fnQueue](#fn-fnQueue) / [makeAsyncIterator](#fn-makeAsyncIterator) / [makeEffect](#fn-makeEffect) / [maybeAsync](#fn-maybeAsync) / [makePromise](#fn-makePromise) / [PromiseEx](#fn-PromiseEx) / [PromisePendingError](#fn-PromisePendingError) |
-| manager | [ModuleLoader](#fn-ModuleLoader) / [CircularDependencyError](#fn-CircularDependencyError) / [getSearchMatcher](#fn-getSearchMatcher) |
-| type | [is](#fn-is) / [shallowEqual](#fn-shallowEqual) / [newFunction](#fn-newFunction) / [toArray](#fn-toArray) / [find](#fn-find) / [reduce](#fn-reduce) / [head](#fn-head) / [contains](#fn-contains) / [forEach](#fn-forEach) / [stringHash](#fn-stringHash) / [getVariableName](#fn-getVariableName) / [isNil](#fn-isNil) / [isObject](#fn-isObject) |
+| dom | [writeClipboard](#-writeclipboard) / [readClipboard](#-readclipboard) / [clsx](#-clsx) / [elt](#-elt) / [startMouseMove](#-startmousemove) |
+| flow | [delay](#-delay) / [debouncePromise](#-debouncepromise) / [fnQueue](#-fnqueue) / [makeAsyncIterator](#-makeasynciterator) / [makeEffect](#-makeeffect) / [maybeAsync](#-maybeasync) / [makePromise](#-makepromise) / [PromiseEx](#-promiseex) / [PromisePendingError](#-promisependingerror) |
+| manager | [ModuleLoader](#-moduleloader) / [CircularDependencyError](#-circulardependencyerror) / [getSearchMatcher](#-getsearchmatcher) |
+| type | [is](#-is) / [shallowEqual](#-shallowequal) / [newFunction](#-newfunction) / [toArray](#-toarray) / [find](#-find) / [reduce](#-reduce) / [head](#-head) / [contains](#-contains) / [forEach](#-foreach) / [stringHash](#-stringhash) / [getVariableName](#-getvariablename) / [isNil](#-isnil) / [isObject](#-isobject) |
 
 <br />
 
 ## 🧩 dom/clipboard
 
-<a id="fn-writeClipboard"></a>
 ### `writeClipboard(text)`
 
 - **text**: `string`
@@ -55,7 +54,6 @@ write text to clipboard, with support for insecure context and legacy browser!
 
 note: if you are in HTTPS and modern browser, you can directly use `navigator.clipboard.writeText()` instead.
 
-<a id="fn-readClipboard"></a>
 ### `readClipboard(timeout?)`
 
 - **timeout?**: `number` — default 1500
@@ -71,7 +69,6 @@ this will throw an Error.
 
 ## 🧩 dom/clsx
 
-<a id="fn-clsx"></a>
 ### `clsx(...args)`
 
 - **args**: `any[]`
@@ -86,7 +83,6 @@ can be an alternative to `classnames()`. modified from [lukeed/clsx](https://git
 
 ## 🧩 dom/elt
 
-<a id="fn-elt"></a>
 ### `elt(tagName, attrs, ...children)`
 
 - **tagName**: `string` — for example `"div"` or `"button.my-btn"`
@@ -127,7 +123,6 @@ You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript
 
 ## 🧩 dom/mouseMove
 
-<a id="fn-startMouseMove"></a>
 ### `startMouseMove({ initialEvent, onMove, onEnd })`
 
 - **__0**: `MouseMoveInitOptions` 
@@ -162,14 +157,12 @@ button.addEventListener('pointerdown', event => {
 
 ## 🧩 flow/flow
 
-<a id="fn-delay"></a>
 ### `delay(milliseconds)`
 
 - **milliseconds**: `number`
 
 - Returns: `Promise<void>`
 
-<a id="fn-debouncePromise"></a>
 ### `debouncePromise(fn)`
 
 - **fn**: `() => Promise<T>`
@@ -184,7 +177,6 @@ The suppressed call will return the running Promise, which is started before.
 
 ## 🧩 flow/fnQueue
 
-<a id="fn-fnQueue"></a>
 ### `fnQueue()`
 
 - Returns: `{ tap, call, queue }` 
@@ -219,10 +211,9 @@ try {
 
 ## 🧩 flow/makeAsyncIterator
 
-<a id="fn-makeAsyncIterator"></a>
 ### `makeAsyncIterator()`
 
-- Returns: `{ write(value: T): void; end(): void; } & AsyncIterableIterator<T>`
+- Returns: `{ write(value: T): void; end(error?: any): void; } & AsyncIterableIterator<T>`
 
 Help you convert a callback-style stream into an async iterator. Also works on "observable" value like RxJS.
 
@@ -235,6 +226,7 @@ const iterator = makeAsyncIterator();
 
 socket.on('data', value => iterator.write(value));
 socket.on('end', () => iterator.end());
+socket.on('error', (err) => iterator.end(err));
 
 for await (const line of iterator) {
   console.log(line);
@@ -245,7 +237,6 @@ for await (const line of iterator) {
 
 ## 🧩 flow/makeEffect
 
-<a id="fn-makeEffect"></a>
 ### `makeEffect(fn, isEqual?)`
 
 - **fn**: `(input: T, previous: T | undefined) => void | (() => void)`
@@ -283,7 +274,6 @@ sayHi.cleanup(); // no output
 
 ## 🧩 flow/promise
 
-<a id="fn-maybeAsync"></a>
 ### `maybeAsync(input)`
 
 - **input**: `T | Promise<T> | (() => T | Promise<T>)` — your sync/async function to run, or just a value
@@ -318,7 +308,6 @@ If `input` is sync function, its result will be stored in `promise.value` and `p
 
 Useful when you are not sure whether `fn` is async or not.
 
-<a id="fn-makePromise"></a>
 ### `makePromise()`
 
 - Returns: `ImperativePromiseEx<T>`
@@ -354,7 +343,6 @@ const result = await handler.wait(1000);
 const result = await handler;
 ```
 
-<a id="fn-PromiseEx"></a>
 ### `new PromiseEx(executor)`
 
 - **executor**: `(resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void`
@@ -418,7 +406,6 @@ is already resolved / rejected.
 
 </details>
 
-<a id="fn-PromisePendingError"></a>
 ### `new PromisePendingError(cause)`
 
 - **cause**: `Promise<any>`
@@ -439,7 +426,6 @@ Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
 
 ## 🧩 manager/moduleLoader
 
-<a id="fn-ModuleLoader"></a>
 ### `new ModuleLoader(source)`
 
 - **source**: `ModuleLoaderSource<T>` 
@@ -531,7 +517,6 @@ note: to get reliable result, this will completely load the module and deep depe
 
 </details>
 
-<a id="fn-CircularDependencyError"></a>
 ### `new CircularDependencyError(query, queryStack)`
 
 - **query**: `string`
@@ -566,7 +551,6 @@ always `'CircularDependencyError'`
 
 ## 🧩 manager/simpleSearch
 
-<a id="fn-getSearchMatcher"></a>
 ### `getSearchMatcher(keyword)`
 
 - **keyword**: `string`
@@ -606,7 +590,6 @@ const result = getSearchMatcher('lic').filter(items);
 
 ## 🧩 type/compare
 
-<a id="fn-is"></a>
 ### `is(x, y)`
 
 - **x**: `any`
@@ -617,7 +600,6 @@ const result = getSearchMatcher('lic').filter(items);
 
 the `Object.is` algorithm
 
-<a id="fn-shallowEqual"></a>
 ### `shallowEqual(objA, objB, depth?)`
 
 - **objA**: `any`
@@ -632,7 +614,6 @@ the `Object.is` algorithm
 
 ## 🧩 type/function
 
-<a id="fn-newFunction"></a>
 ### `newFunction(argumentNames, functionBody, options?)`
 
 - **argumentNames**: `NameArray<ARGS>` — a `string[]` of argument names
@@ -650,7 +631,6 @@ like `new Function` but with more reasonable options and api
 
 ## 🧩 type/iterable
 
-<a id="fn-toArray"></a>
 ### `toArray(value)`
 
 - **value**: `OneOrMany<T>`
@@ -665,7 +645,6 @@ Input anything, always return an array.
 
 Finally before returning, all `null` and `undefined` will be omitted
 
-<a id="fn-find"></a>
 ### `find(iterator, predicate)`
 
 - **iterator**: `Nil | Iterable<T>`
@@ -676,7 +655,6 @@ Finally before returning, all `null` and `undefined` will be omitted
 
 Like `Array#find`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
 
-<a id="fn-reduce"></a>
 ### `reduce(iterator, initial, reducer)`
 
 - **iterator**: `Nil | Iterable<T>`
@@ -689,7 +667,6 @@ Like `Array#find`, but the input could be a Iterator (for example, from generato
 
 Like `Array#reduce`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
 
-<a id="fn-head"></a>
 ### `head(iterator)`
 
 - **iterator**: `Nil | Iterable<T>`
@@ -698,7 +675,6 @@ Like `Array#reduce`, but the input could be a Iterator (for example, from genera
 
 Take the first result from a Iterator
 
-<a id="fn-contains"></a>
 ### `contains(collection, item)`
 
 - **collection**: `Nil | CollectionOf<T>`
@@ -709,7 +685,6 @@ Take the first result from a Iterator
 
 input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contains the `item`
 
-<a id="fn-forEach"></a>
 ### `forEach(objOrArray, iter)`
 
 - **objOrArray**: `any`
@@ -724,7 +699,6 @@ a simple forEach iterator that support both `Array | Set | Map | Object | Iterab
 
 ## 🧩 type/string
 
-<a id="fn-stringHash"></a>
 ### `stringHash(str)`
 
 - **str**: `string`
@@ -733,7 +707,6 @@ a simple forEach iterator that support both `Array | Set | Map | Object | Iterab
 
 Quickly compute string hash with [cyrb53 algorithm](https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js)
 
-<a id="fn-getVariableName"></a>
 ### `getVariableName(basicName, existingVariables?)`
 
 - **basicName**: `string`
@@ -759,7 +732,6 @@ getVariableName('name', ['name', 'age'])    // -> "name2"
 
 ## 🧩 type/types
 
-<a id="fn-isNil"></a>
 ### `isNil(obj)`
 
 - **obj**: `any`
@@ -768,7 +740,6 @@ getVariableName('name', ['name', 'age'])    // -> "name2"
 
 Tell if `obj` is null or undefined
 
-<a id="fn-isObject"></a>
 ### `isObject(obj)`
 
 - **obj**: `any`

@@ -32,4 +32,24 @@ describe('makeAsyncIterator', () => {
 
     expect(expectedLines.length).toBe(0) // all lines are read
   })
+
+  it('throws error', async () => {
+    const mockError = new Error('A')
+    const iterator = makeAsyncIterator<number>();
+
+    try {
+      let remain = 3;
+      iterator.write(--remain);
+      for await (const it of iterator) {
+        expect(it).toBe(remain)
+        if (it > 0) iterator.write(--remain);
+        else iterator.end(mockError)
+      }
+
+      expect(0).toBe(1) // shall never come here
+
+    } catch (err) {
+      expect(err).toBe(mockError)
+    }
+  })
 })
