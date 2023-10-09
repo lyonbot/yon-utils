@@ -660,17 +660,17 @@ always `'CircularDependencyError'`
     
     will return `0` for not matched, `1` for fuzzy matched, `> 1` for partially accurately matched
   
-  - **filter**: `FilterFunction` — filter a list and get the sorted search result.
+  - **filter**: `FilterFunction` — filter a list / collection, and get the sorted search result.
     
-    returns `Array<{ item, score, index, key }>`. if your input is a Map or Object, `key` will be helpful.
-    
-    also see `filter` if you only want a list of item values.
-  
-  - **filterEx**: `FilterExFunction` — filter a list and get the sorted search result with extra information.
-    
-    returns an array that only contains item values.
+    returns a similarity-sorted array of matched values.
     
     also see `filterEx` if want more information
+  
+  - **filterEx**: `FilterExFunction` — filter a list / collection, and get the sorted search result with extra information.
+    
+    returns a similarity-sorted array of `{ value, score, index, key }`.
+    
+    also see `filter` if you just want the values.
 
 Simple utility to start searching
 

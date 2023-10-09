@@ -11,9 +11,9 @@ describe('simpleSearch', () => {
 
     const resultEx = matcher.filterEx(items);
     expect(resultEx).toEqual([
-      { index: 1, item: "Líchee", key: 1, score: expect.any(Number) },
-      { index: 0, item: "Alice", key: 0, score: 1 },
-      { index: 3, item: "alice", key: 3, score: 1 },
+      { index: 1, value: "Líchee", key: 1, score: expect.any(Number) },
+      { index: 0, value: "Alice", key: 0, score: 1 },
+      { index: 3, value: "alice", key: 3, score: 1 },
     ])
     expect(resultEx[0].index).gte(1)
   });

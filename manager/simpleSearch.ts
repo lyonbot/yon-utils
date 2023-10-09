@@ -2,10 +2,10 @@ import { forEach } from "../type/iterable.js"
 
 type FilterExFunction = {
   /** filter a list and get the sorted search result, with EXtra information. */
-  <T, K>(items: Map<K, T>): { item: T; index: number; key: K, score: number }[]
-  <T>(items: Iterable<T>): { item: T; index: number; key: string, score: number }[]
-  <T extends Record<string, T>>(items: T): { item: T; index: number; key: string, score: number }[]
-  (items: any): { item: any; index: number; key: any, score: number }[]
+  <T, K>(items: Map<K, T>): { value: T; index: number; key: K, score: number }[]
+  <T>(items: Iterable<T>): { value: T; index: number; key: string, score: number }[]
+  <T extends Record<string, T>>(items: T): { value: T; index: number; key: string, score: number }[]
+  (items: any): { value: any; index: number; key: any, score: number }[]
 }
 
 type FilterFunction = {
@@ -13,7 +13,7 @@ type FilterFunction = {
   <T, K>(items: Map<K, T>): T[]
   <T>(items: Iterable<T>): T[]
   <T extends Record<string, T>>(items: T): T[]
-  (items: any): { item: any; index: number; key: any, score: number }[]
+  (items: any): any[]
 }
 
 /**
@@ -82,7 +82,7 @@ export function getSearchMatcher(keyword: string) {
   }
 
   const filterEx: FilterExFunction = (items: any) => {
-    const res: { item: any; index: number; key: any; score: number }[] = []
+    const res: { value: any; index: number; key: any; score: number }[] = []
 
     const isArray = Array.isArray(items)
     let index = -1;
@@ -92,14 +92,14 @@ export function getSearchMatcher(keyword: string) {
       else index += 1;
 
       const score = test(item)
-      if (score) res.push({ item, score, index, key })
+      if (score) res.push({ value: item, score, index, key })
     })
 
     return res.sort((a, b) => b.score - a.score)
   }
 
   function filter<T>(items: Iterable<T>) {
-    return filterEx(items).map(r => r.item)
+    return filterEx(items).map(r => r.value)
   }
 
   return {
@@ -113,20 +113,20 @@ export function getSearchMatcher(keyword: string) {
     test,
 
     /**
-     * filter a list and get the sorted search result.
+     * filter a list / collection, and get the sorted search result.
      * 
-     * returns `Array<{ item, score, index, key }>`. if your input is a Map or Object, `key` will be helpful.
+     * returns a similarity-sorted array of matched values.
      * 
-     * also see `filter` if you only want a list of item values.
+     * also see `filterEx` if want more information
      */
     filter: filter as FilterFunction,
 
     /**
-     * filter a list and get the sorted search result with extra information.
+     * filter a list / collection, and get the sorted search result with extra information.
      * 
-     * returns an array that only contains item values.
+     * returns a similarity-sorted array of `{ value, score, index, key }`.
      * 
-     * also see `filterEx` if want more information
+     * also see `filter` if you just want the values.
      */
     filterEx: filterEx as FilterExFunction,
   }
