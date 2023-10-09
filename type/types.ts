@@ -18,3 +18,7 @@ export function isObject(obj: any) {
   if (Array.isArray(obj)) return 'array';
   return 'object';
 }
+
+export function isThenable<T = any>(sth: any): sth is PromiseLike<T> {
+  return !!sth && typeof sth.then === 'function'
+}

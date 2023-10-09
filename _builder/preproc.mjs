@@ -42,12 +42,22 @@ const markdownEnd = oldMarkdown.slice(oldMarkdown.indexOf(markdownEndMark))
 
 // -------------
 
-let newMarkdown = ''
+/** 
+ * @type {Record<string, { title: string, bookmarkId: string }[]>}
+ * 
+ * { flow: [], dom: [] }
+ */
 let toc = Object.fromEntries(Object.keys(dirs).map(d => [d, []]))
+
+let newMarkdown = ''
 let lastLine
+
 for await (const content of genAPIDoc(toc)) {
   if (content.isTOCItem) {
-    tocItems.push(content.isTOCItem)
+    const { dir, title, bookmarkId } = content
+
+    if (!toc[dir]) toc[dir] = []
+    toc[dir].push({ title, bookmarkId })
     continue
   }
 
@@ -63,7 +73,11 @@ newMarkdown =
 
 | module | methods |
 |---------|:--------|
-${Object.entries(toc).map(([dir, items]) => `| ${dir} | ${items.map(x => `[${x}](#-${x.toLowerCase()})`).join(' / ')} |`).join('\n')}
+${Object.keys(toc).map(dir => `| ${dir} | ${
+    // all exposed methods of module (aka. dir)
+    toc[dir]
+      .map(x => `[${x.title}](#${x.bookmarkId})`)
+      .join(' / ')} |`).join('\n')}
 
 ${newMarkdown}
 ${markdownEnd}`
@@ -204,9 +218,13 @@ async function* genAPIDoc(toc) {
 
         const { signatureText, returnDoc, exampleDoc, paramsDoc } = parsed
 
-        toc[dir].push(funcName)
-        // yield `<a id="fn-${funcName}"></a>`
-        yield `### \`${isClass}${signatureText}\``
+        const sectionTitle = `${isClass}${signatureText}`
+        const bookmarkId = toGitHubBookmarkId(sectionTitle)
+        yield { isTOCItem: true, dir, title: funcName, bookmarkId }
+
+        yield `<a id="${bookmarkId}"></a>`
+        yield ''
+        yield `### \`${sectionTitle}\``
         yield ''
 
         for (const param of paramsDoc) {
@@ -337,4 +355,17 @@ function indent(str, indent, indentForFirstLine = indent) {
   str = str.replace(/^/gm, indent)
   str = (indentForFirstLine || '') + str.slice(indent.length)
   return str
+}
+
+function toGitHubBookmarkId(str) {
+  let out = ''
+
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charAt(i)
+    if (ch >= 'a' && ch <= 'z') out += ch
+    if (ch >= 'A' && ch <= 'Z') out += ch.toLowerCase()
+    if (ch === ' ') out += '-'
+  }
+
+  return out
 }

@@ -35,14 +35,16 @@ All modules are shipped as ES modules and tree-shakable.
 
 | module | methods |
 |---------|:--------|
-| dom | [writeClipboard](#-writeclipboard) / [readClipboard](#-readclipboard) / [clsx](#-clsx) / [elt](#-elt) / [startMouseMove](#-startmousemove) |
-| flow | [delay](#-delay) / [debouncePromise](#-debouncepromise) / [fnQueue](#-fnqueue) / [makeAsyncIterator](#-makeasynciterator) / [makeEffect](#-makeeffect) / [maybeAsync](#-maybeasync) / [makePromise](#-makepromise) / [PromiseEx](#-promiseex) / [PromisePendingError](#-promisependingerror) |
-| manager | [ModuleLoader](#-moduleloader) / [CircularDependencyError](#-circulardependencyerror) / [getSearchMatcher](#-getsearchmatcher) |
-| type | [is](#-is) / [shallowEqual](#-shallowequal) / [newFunction](#-newfunction) / [toArray](#-toarray) / [find](#-find) / [reduce](#-reduce) / [head](#-head) / [contains](#-contains) / [forEach](#-foreach) / [stringHash](#-stringhash) / [getVariableName](#-getvariablename) / [isNil](#-isnil) / [isObject](#-isobject) |
+| dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
+| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
+| manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
+| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
 <br />
 
 ## 🧩 dom/clipboard
+
+<a id="writeclipboardtext"></a>
 
 ### `writeClipboard(text)`
 
@@ -53,6 +55,8 @@ All modules are shipped as ES modules and tree-shakable.
 write text to clipboard, with support for insecure context and legacy browser!
 
 note: if you are in HTTPS and modern browser, you can directly use `navigator.clipboard.writeText()` instead.
+
+<a id="readclipboardtimeout"></a>
 
 ### `readClipboard(timeout?)`
 
@@ -69,6 +73,8 @@ this will throw an Error.
 
 ## 🧩 dom/clsx
 
+<a id="clsxargs"></a>
+
 ### `clsx(...args)`
 
 - **args**: `any[]`
@@ -82,6 +88,8 @@ can be an alternative to `classnames()`. modified from [lukeed/clsx](https://git
 <br />
 
 ## 🧩 dom/elt
+
+<a id="elttagname-attrs-children"></a>
 
 ### `elt(tagName, attrs, ...children)`
 
@@ -123,6 +131,8 @@ You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript
 
 ## 🧩 dom/mouseMove
 
+<a id="startmousemove-initialevent-onmove-onend-"></a>
+
 ### `startMouseMove({ initialEvent, onMove, onEnd })`
 
 - **__0**: `MouseMoveInitOptions` 
@@ -157,25 +167,34 @@ button.addEventListener('pointerdown', event => {
 
 ## 🧩 flow/flow
 
+<a id="delaymilliseconds"></a>
+
 ### `delay(milliseconds)`
 
 - **milliseconds**: `number`
 
 - Returns: `Promise<void>`
 
+<a id="debouncepromisefn"></a>
+
 ### `debouncePromise(fn)`
 
-- **fn**: `() => Promise<T>`
+- **fn**: `() => Promise<T>` — The function to be debounced.
 
-- Returns: `() => Promise<T>`
+- Returns: `() => Promise<T>` — The debounced function.
 
-Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
+Creates a debounced version of a function that returns a promise.
 
-The suppressed call will return the running Promise, which is started before.
+The returned function will ensure that only one Promise is created and executed at a time,
+even if the debounced function is called multiple times before last Promise gets finished.
+
+All _suppressed_ calls will get the last started Promise.
 
 <br />
 
 ## 🧩 flow/fnQueue
+
+<a id="fnqueue"></a>
 
 ### `fnQueue()`
 
@@ -211,6 +230,8 @@ try {
 
 ## 🧩 flow/makeAsyncIterator
 
+<a id="makeasynciterator"></a>
+
 ### `makeAsyncIterator()`
 
 - Returns: `{ write(value: T): void; end(error?: any): void; } & AsyncIterableIterator<T>`
@@ -236,6 +257,8 @@ for await (const line of iterator) {
 <br />
 
 ## 🧩 flow/makeEffect
+
+<a id="makeeffectfn-isequal"></a>
 
 ### `makeEffect(fn, isEqual?)`
 
@@ -274,6 +297,8 @@ sayHi.cleanup(); // no output
 
 ## 🧩 flow/promise
 
+<a id="maybeasyncinput"></a>
+
 ### `maybeAsync(input)`
 
 - **input**: `T | Promise<T> | (() => T | Promise<T>)` — your sync/async function to run, or just a value
@@ -307,6 +332,8 @@ Run the function, return a crafted Promise that exposes `status`, `value` and `r
 If `input` is sync function, its result will be stored in `promise.value` and `promise.status` will immediately be set as "fulfilled"
 
 Useful when you are not sure whether `fn` is async or not.
+
+<a id="makepromise"></a>
 
 ### `makePromise()`
 
@@ -342,6 +369,8 @@ const result = await handler.wait(1000);
 // or just await
 const result = await handler;
 ```
+
+<a id="new-promiseexexecutor"></a>
 
 ### `new PromiseEx(executor)`
 
@@ -406,6 +435,8 @@ is already resolved / rejected.
 
 </details>
 
+<a id="new-promisependingerrorcause"></a>
+
 ### `new PromisePendingError(cause)`
 
 - **cause**: `Promise<any>`
@@ -424,7 +455,70 @@ Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
 
 <br />
 
+## 🧩 flow/withDefer
+
+<a id="withdeferfn"></a>
+
+### `withDefer(fn)`
+
+- **fn**: `(defer: DeferFunction<any>) => Ret`
+
+- Returns: `Ret`
+
+Like golang and other language, use `defer(callback)` to properly release resources, and avoid `try catch finally` hells.
+
+All deferred callbacks are invoked in `finally` blocks.
+If one callback throws, its following callbacks still work. At the end, `withDefer` only throws the last Error.
+
+```js
+// sync
+const result = withDefer((defer) => {
+  const file = openFileSync('xxx')
+  defer(() => closeFileSync(file))  // <-
+
+  const parser = createParser()
+  defer(() => parser.dispose())  // <-
+
+  return parser.parse(file.readSync())
+})
+```
+
+If using async functions, use `withAsyncDefer`
+
+```js
+// async
+const result = await withAsyncDefer(async (defer) => {
+  const file = await openFile('xxx')
+  defer(async () => await closeFile(file))  // <- defer function can be async now!
+
+  const parser = createParser()
+  defer(() => parser.dispose())  // <-
+
+  return parser.parse(await file.read())
+})
+```
+
+If you want to suppress the callbacks' throwing, use `defer.silent`
+
+```js
+defer.silent(() => closeFile(file))  // will never throws
+```
+
+<a id="withasyncdeferfn"></a>
+
+### `withAsyncDefer(fn)`
+
+- **fn**: `(defer: AsyncDeferFunction) => Ret`
+
+- Returns: `Ret`
+
+Same as **withDefer** plus it returns a Promise, and supports async callbacks.
+
+<br />
+
 ## 🧩 manager/moduleLoader
+
+<a id="new-moduleloadersource"></a>
 
 ### `new ModuleLoader(source)`
 
@@ -517,6 +611,8 @@ note: to get reliable result, this will completely load the module and deep depe
 
 </details>
 
+<a id="new-circulardependencyerrorquery-querystack"></a>
+
 ### `new CircularDependencyError(query, queryStack)`
 
 - **query**: `string`
@@ -550,6 +646,8 @@ always `'CircularDependencyError'`
 <br />
 
 ## 🧩 manager/simpleSearch
+
+<a id="getsearchmatcherkeyword"></a>
 
 ### `getSearchMatcher(keyword)`
 
@@ -590,6 +688,8 @@ const result = getSearchMatcher('lic').filter(items);
 
 ## 🧩 type/compare
 
+<a id="isx-y"></a>
+
 ### `is(x, y)`
 
 - **x**: `any`
@@ -599,6 +699,8 @@ const result = getSearchMatcher('lic').filter(items);
 - Returns: `boolean`
 
 the `Object.is` algorithm
+
+<a id="shallowequalobja-objb-depth"></a>
 
 ### `shallowEqual(objA, objB, depth?)`
 
@@ -613,6 +715,8 @@ the `Object.is` algorithm
 <br />
 
 ## 🧩 type/function
+
+<a id="newfunctionargumentnames-functionbody-options"></a>
 
 ### `newFunction(argumentNames, functionBody, options?)`
 
@@ -631,6 +735,8 @@ like `new Function` but with more reasonable options and api
 
 ## 🧩 type/iterable
 
+<a id="toarrayvalue"></a>
+
 ### `toArray(value)`
 
 - **value**: `OneOrMany<T>`
@@ -645,6 +751,8 @@ Input anything, always return an array.
 
 Finally before returning, all `null` and `undefined` will be omitted
 
+<a id="finditerator-predicate"></a>
+
 ### `find(iterator, predicate)`
 
 - **iterator**: `Nil | Iterable<T>`
@@ -654,6 +762,8 @@ Finally before returning, all `null` and `undefined` will be omitted
 - Returns: `T | undefined`
 
 Like `Array#find`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
+
+<a id="reduceiterator-initial-reducer"></a>
 
 ### `reduce(iterator, initial, reducer)`
 
@@ -667,6 +777,8 @@ Like `Array#find`, but the input could be a Iterator (for example, from generato
 
 Like `Array#reduce`, but the input could be a Iterator (for example, from generator, `Set` or `Map`)
 
+<a id="headiterator"></a>
+
 ### `head(iterator)`
 
 - **iterator**: `Nil | Iterable<T>`
@@ -674,6 +786,8 @@ Like `Array#reduce`, but the input could be a Iterator (for example, from genera
 - Returns: `T | undefined`
 
 Take the first result from a Iterator
+
+<a id="containscollection-item"></a>
 
 ### `contains(collection, item)`
 
@@ -684,6 +798,8 @@ Take the first result from a Iterator
 - Returns: `boolean`
 
 input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contains the `item`
+
+<a id="foreachobjorarray-iter"></a>
 
 ### `forEach(objOrArray, iter)`
 
@@ -699,6 +815,8 @@ a simple forEach iterator that support both `Array | Set | Map | Object | Iterab
 
 ## 🧩 type/string
 
+<a id="stringhashstr"></a>
+
 ### `stringHash(str)`
 
 - **str**: `string`
@@ -706,6 +824,8 @@ a simple forEach iterator that support both `Array | Set | Map | Object | Iterab
 - Returns: `number`
 
 Quickly compute string hash with [cyrb53 algorithm](https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js)
+
+<a id="getvariablenamebasicname-existingvariables"></a>
 
 ### `getVariableName(basicName, existingVariables?)`
 
@@ -732,6 +852,8 @@ getVariableName('name', ['name', 'age'])    // -> "name2"
 
 ## 🧩 type/types
 
+<a id="isnilobj"></a>
+
 ### `isNil(obj)`
 
 - **obj**: `any`
@@ -740,6 +862,8 @@ getVariableName('name', ['name', 'age'])    // -> "name2"
 
 Tell if `obj` is null or undefined
 
+<a id="isobjectobj"></a>
+
 ### `isObject(obj)`
 
 - **obj**: `any`
@@ -747,6 +871,14 @@ Tell if `obj` is null or undefined
 - Returns: `false | "array" | "object"`
 
 Tell if `obj` is Array, Object or other(`false`)
+
+<a id="isthenablesth"></a>
+
+### `isThenable(sth)`
+
+- **sth**: `any`
+
+- Returns: `boolean`
 
 
 

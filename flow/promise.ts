@@ -182,9 +182,16 @@ export class PromisePendingError extends Error {
  * @returns a crafted Promise that exposes `{ status, value, reason }`, whose `status` could be `"pending" | "fulfilled" | "rejected"`
  */
 export function maybeAsync<T>(input: T | Promise<T> | (() => T | Promise<T>)) {
-  return new PromiseEx<Awaited<T>>(resolve => {
-    // @ts-ignore
-    if (typeof input === 'function') input = input();
+  return new PromiseEx<Awaited<T>>((resolve, reject) => {
+    if (typeof input === 'function') {
+      try {
+        // @ts-ignore
+        input = input();
+      } catch (error) {
+        reject(error);
+        return;
+      }
+    }
     resolve(input as any);
   })
 }

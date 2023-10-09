@@ -3,9 +3,15 @@ export function delay(milliseconds: number) {
 }
 
 /**
- * Wrap an async nullary function. All actual calls will be suppressed until last Promise is resolved.
+ * Creates a debounced version of a function that returns a promise.
+ *
+ * The returned function will ensure that only one Promise is created and executed at a time,
+ * even if the debounced function is called multiple times before last Promise gets finished.
  * 
- * The suppressed call will return the running Promise, which is started before.
+ * All _suppressed_ calls will get the last started Promise.
+ *
+ * @param fn The function to be debounced.
+ * @returns The debounced function.
  */
 export const debouncePromise = <T>(fn: () => Promise<T>) => {
   let promise: Promise<T> | undefined;
