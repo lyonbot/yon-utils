@@ -52,3 +52,31 @@ export function getVariableName(basicName: string, existingVariables?: Collectio
 
   return tmp;
 }
+
+/**
+ * Add bracket (parenthesis) to text
+ * 
+ * - `bracket("c_name", "Column Name")` => `"c_name (Column Name)"`
+ * - `bracket("Column Name", "c_name")` => `"Column Name (c_name)"`
+ * 
+ * If one parameter is empty, it returns the other one:
+ * 
+ * - `bracket("c_name", null)` => `"c_name"`
+ * - `bracket(null, "c_name")` => `"c_name"`
+ * 
+ * @param brackets - defaults to `[" (", ")"]`
+ */
+export function bracket(
+  text1: string | number | null | undefined,
+  text2: string | number | null | undefined,
+  brackets?: [string, string] | string
+) {
+  text1 = (!text1 && text1 !== 0) ? '' : String(text1)
+  text2 = (!text2 && text2 !== 0) ? '' : String(text2)
+
+  if (!text1) return text2
+  if (!text2) return text1
+
+  const [left = ' (', right = ')'] = brackets || []
+  return `${text1}${left}${text2}${right}`
+}

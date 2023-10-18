@@ -38,7 +38,7 @@ All modules are shipped as ES modules and tree-shakable.
 | dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
 | flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
-| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
+| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
 <br />
 
@@ -847,6 +847,28 @@ getVariableName('123abc')    // -> "_123abc"
 getVariableName('')          // -> "foobar"
 getVariableName('name', ['name', 'age'])    // -> "name2"
 ```
+
+<a id="brackettext1-text2-brackets"></a>
+
+### `bracket(text1, text2, brackets?)`
+
+- **text1**: `string | number | null | undefined`
+
+- **text2**: `string | number | null | undefined`
+
+- **brackets?**: `string | [string, string]` — defaults to `[" (", ")"]`
+
+- Returns: `string`
+
+Add bracket (parenthesis) to text
+
+- `bracket("c_name", "Column Name")` => `"c_name (Column Name)"`
+- `bracket("Column Name", "c_name")` => `"Column Name (c_name)"`
+
+If one parameter is empty, it returns the other one:
+
+- `bracket("c_name", null)` => `"c_name"`
+- `bracket(null, "c_name")` => `"c_name"`
 
 <br />
 

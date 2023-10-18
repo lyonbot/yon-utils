@@ -363,6 +363,7 @@ function toGitHubBookmarkId(str) {
   for (let i = 0; i < str.length; i++) {
     const ch = str.charAt(i)
     if (ch >= 'a' && ch <= 'z') out += ch
+    if (ch >= '0' && ch <= '9') out += ch
     if (ch >= 'A' && ch <= 'Z') out += ch.toLowerCase()
     if (ch === ' ') out += '-'
   }
