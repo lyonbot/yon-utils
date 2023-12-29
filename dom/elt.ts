@@ -106,7 +106,11 @@ export namespace elt {
 type NodeAttr<THIS> = {
   [k in keyof HTMLElementEventMap as `on${k}`]?: (this: THIS, ev: HTMLElementEventMap[k]) => any
 } & {
-  class?: string;
-  style?: any;
+  /** supports string / array / object syntax */
+  class?: any;
+  /** alias of `class`, supports string / array / object syntax */
+  className?: any;
+  /** style. supports string / object syntax */
+  style?: string | Partial<CSSStyleDeclaration> | object;
   [k: string]: any
 }

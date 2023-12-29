@@ -35,7 +35,7 @@ All modules are shipped as ES modules and tree-shakable.
 
 | module | methods |
 |---------|:--------|
-| dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
+| dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [modKey](#modkeyev) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
 | flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
 | type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
@@ -129,6 +129,40 @@ You can add <code>/** &#64;jsx elt *&#47;</code> into your code, then TypeScript
 
 <br />
 
+## 🧩 dom/keyboard
+
+<a id="modkeyev"></a>
+
+### `modKey(ev)`
+
+- **ev**: `KeyboardEventLike` 
+  - **ctrlKey?**: `boolean` 
+  
+  - **metaKey?**: `boolean` 
+  
+  - **shiftKey?**: `boolean` 
+  
+  - **altKey?**: `boolean`
+
+- Returns: `number`
+
+get Modifier Key status from a Event
+
+#### Remark
+
+use `modKey.Mod` to check if the key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux
+
+#### Example
+
+```js
+if (modKey(ev) === modKey.CtrlCmd | modKey.Shift && ev.code === 'KeyW) {
+  ...
+}
+```
+
+
+<br />
+
 ## 🧩 dom/mouseMove
 
 <a id="startmousemove-initialevent-onmove-onend-"></a>
@@ -162,6 +196,7 @@ button.addEventListener('pointerdown', event => {
   });
 });
 ```
+
 
 <br />
 
@@ -226,6 +261,7 @@ try {
 }
 ```
 
+
 <br />
 
 ## 🧩 flow/makeAsyncIterator
@@ -253,6 +289,7 @@ for await (const line of iterator) {
   console.log(line);
 }
 ```
+
 
 <br />
 
@@ -292,6 +329,7 @@ sayHi('Bob');    // output: Goodbye, Alice   Hello, Bob
 sayHi.cleanup(); // output: Goodbye, Bob
 sayHi.cleanup(); // no output
 ```
+
 
 <br />
 
@@ -369,6 +407,7 @@ const result = await handler.wait(1000);
 // or just await
 const result = await handler;
 ```
+
 
 <a id="new-promiseexexecutor"></a>
 
@@ -496,6 +535,7 @@ const result = await timing(print, async () => {
 })
 ```
 
+
 <br />
 
 ## 🧩 flow/withDefer
@@ -546,6 +586,12 @@ If you want to suppress the callbacks' throwing, use `defer.silent`
 ```js
 defer.silent(() => closeFile(file))  // will never throws
 ```
+
+#### Remark
+
+Refer to [TypeScript using syntax](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management),
+[TC39 Explicit Resource Management](https://github.com/tc39/proposal-explicit-resource-management) and GoLang's `defer` keyword.
+
 
 <a id="withasyncdeferfn"></a>
 
@@ -727,6 +773,7 @@ const result = getSearchMatcher('lic').filter(items);
 // -> ['Lichee', 'Alice']
 ```
 
+
 <br />
 
 ## 🧩 type/compare
@@ -896,6 +943,7 @@ getVariableName('123abc')    // -> "_123abc"
 getVariableName('')          // -> "foobar"
 getVariableName('name', ['name', 'age'])    // -> "name2"
 ```
+
 
 <a id="brackettext1-text2-brackets"></a>
 

@@ -126,6 +126,7 @@ async function* genAPIDoc(toc) {
         const paramsDocLUT = Object.create(null);
         let returnDoc = ''
         let exampleDoc = ''
+        let remarkDoc = ''
 
         // extract information from JSDoc
         {
@@ -140,6 +141,10 @@ async function* genAPIDoc(toc) {
 
             if (it.name === 'return' || it.name === 'returns') {
               returnDoc = joinText(it.text)
+            }
+
+            if (it.name === 'remark') {
+              remarkDoc = joinText(it.text)
             }
 
             if (it.name === 'example') {
@@ -192,6 +197,9 @@ async function* genAPIDoc(toc) {
           /** optional, example extracted from jsdoc */
           exampleDoc,
 
+          /** optional, remark extracted from jsdoc */
+          remarkDoc,
+
           /** each item is like `**foobar**: type - info` */
           paramsDoc,
         }
@@ -216,7 +224,7 @@ async function* genAPIDoc(toc) {
         const parsed = getMethodDoc(funcName, callSignature, { extraJSDocTags: s.getJsDocTags() })
         if (!parsed) continue;
 
-        const { signatureText, returnDoc, exampleDoc, paramsDoc } = parsed
+        const { signatureText, returnDoc, remarkDoc, exampleDoc, paramsDoc } = parsed
 
         const sectionTitle = `${isClass}${signatureText}`
         const bookmarkId = toGitHubBookmarkId(sectionTitle)
@@ -240,9 +248,14 @@ async function* genAPIDoc(toc) {
         yield joinText(s.getDocumentationComment())
         yield ''
 
+        if (remarkDoc) {
+          yield '#### Remark\n'
+          yield remarkDoc + '\n'
+        }
+
         if (exampleDoc) {
           yield '#### Example\n'
-          yield exampleDoc
+          yield exampleDoc + '\n'
         }
 
         const classType = !!isClass && callSignature.getReturnType()
