@@ -150,13 +150,14 @@ get Modifier Key status from a Event
 
 #### Remark
 
-use `modKey.Mod` to check if the key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux
+1. use `modKey.Mod` to indicate if the key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux
+2. use `|` (or operator) to combine modifier keys. see example below.
 
 #### Example
 
 ```js
-if (modKey(ev) === modKey.CtrlCmd | modKey.Shift && ev.code === 'KeyW) {
-  ...
+if (modKey(ev) === modKey.Mod | modKey.Shift && ev.code === 'KeyW') {
+  // Ctrl/Cmd + Shift + W, depends on the OS
 }
 ```
 

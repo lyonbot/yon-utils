@@ -14,14 +14,14 @@ export interface KeyboardEventLike {
  * 
  * @remark 
  * 
- * 1. use `modKey.Mod` to check if the key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux
+ * 1. use `modKey.Mod` to indicate if the key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux
  * 2. use `|` (or operator) to combine modifier keys. see example below.
  * 
  * @example 
  * 
  * ```js
- * if (modKey(ev) === modKey.CtrlCmd | modKey.Shift && ev.code === 'KeyW) {
- *   // Ctrl/Cmd + Shift + W
+ * if (modKey(ev) === modKey.Mod | modKey.Shift && ev.code === 'KeyW') {
+ *   // Ctrl/Cmd + Shift + W, depends on the OS
  * }
  * ```
  */
@@ -44,5 +44,4 @@ export namespace modKey {
 
   /** Mod key is `⌘`(Cmd) on Mac, or `Ctrl` on Windows/Linux */
   export const Mod = MOD_KEY === 'ctrlKey' ? Ctrl : Cmd;
-  export const CtrlCmd = Ctrl | Cmd;
 }
