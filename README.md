@@ -36,9 +36,9 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
-| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
+| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
-| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
+| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
 <br />
 
@@ -455,6 +455,49 @@ Could be thrown from `.value` and `.wait(timeout)` of PromiseEx
 
 <br />
 
+## 🧩 flow/timing
+
+<a id="timingoutput-promise"></a>
+
+### `timing(output, promise)`
+
+- **output**: `string | Nil | PrintMethod` — can be:
+    - a `(timeMs, sinceMs) => void`
+    - a `string` - print labelled result with `timing.defaultPrint()`, defaults to console.log
+
+- **promise**: `T`
+
+- Returns: `T` — result of `fn()`
+
+Measures time of execution of `executeFn()`. Works on async function and Promise too.
+
+#### Example
+
+```js
+const result = timing('read', () => {
+  const data = fs.readFileSync('xxx');
+  const decrypted = crypto.decrypt(data, key);
+  return decrypt;
+})
+
+// get result
+// meanwhile, console prints "[read] took 120ms"
+```
+
+Or with custom logger
+
+```js
+const print = (ms) => console.log(`[timing] fetching took ${ms}ms`)
+
+const result = await timing(print, async () => {
+  const resp = await fetch('/user/xxx');
+  const user = await resp.json();
+  return user;
+})
+```
+
+<br />
+
 ## 🧩 flow/withDefer
 
 <a id="withdeferfn"></a>
@@ -730,6 +773,12 @@ the `Object.is` algorithm
 - Returns: `Fn<RESULT, ARGS>`
 
 like `new Function` but with more reasonable options and api
+
+<a id="noop"></a>
+
+### `noop()`
+
+- Returns: `void`
 
 <br />
 

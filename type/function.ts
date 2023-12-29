@@ -5,7 +5,7 @@ type ArgumentNameArray<ARGS, AGG extends any[]> =
   : ARGS extends [any, ...infer REST] ? ArgumentNameArray<REST, [...AGG, string]>
   : string[]
 
-type NameArray<ARGS> = {} & ArgumentNameArray<ARGS, []> 
+type NameArray<ARGS> = {} & ArgumentNameArray<ARGS, []>
 
 /**
  * like `new Function` but with more reasonable options and api
@@ -29,3 +29,5 @@ export function newFunction<RESULT = any, ARGS extends any[] = any[]>(
   const fn = new Function(...argumentNames, functionBody) as Fn<RESULT, ARGS>;
   return fn;
 }
+
+export const noop = (): void => {};

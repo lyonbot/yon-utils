@@ -5,4 +5,5 @@ export * from "./fnQueue.js";
 export * from "./makeAsyncIterator.js";
 export * from "./makeEffect.js";
 export * from "./promise.js";
+export * from "./timing.js";
 export * from "./withDefer.js";
