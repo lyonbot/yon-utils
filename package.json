@@ -1,6 +1,6 @@
 {
   "name": "yon-utils",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "type": "module",
   "description": "Some utils that I repeated too many times. DRY!",
   "main": "index.js",
