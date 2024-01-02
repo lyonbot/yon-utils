@@ -43,14 +43,16 @@ const supportPointerEvents = typeof document !== 'undefined' && 'onpointerdown' 
 export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOptions): Promise<MouseMoveInfo> {
   // @ts-ignore
   const root: Document = initialEvent.target?.getRootNode() || document;
+  const currentTarget = initialEvent.currentTarget as HTMLElement;
   const sinceTime = Date.now();
 
-  let focusedPointerId: number | false = false;
+  let focusedPointerId = 'pointerId' in initialEvent && initialEvent.pointerId
+  let previousTouchAction = root.body.style.touchAction
   let oX = 0;
   let oY = 0;
 
   function cvtEventToMouseInfo(ev: PointerEvent | MouseEvent): MouseMoveInfo | null {
-    const pointerId = 'pointerId' in initialEvent ? initialEvent.pointerId : false
+    const pointerId = 'pointerId' in ev && ev.pointerId
     if (pointerId !== false) {
       if (focusedPointerId === false) focusedPointerId = pointerId
       else if (focusedPointerId !== pointerId) return null   // not same pointer
@@ -73,6 +75,11 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
   const initData = cvtEventToMouseInfo(initialEvent);
   if (!initData) return Promise.reject(new Error('Invalid initial event'));
 
+  if (focusedPointerId !== false) {
+    currentTarget.setPointerCapture(focusedPointerId);
+    root.body.style.setProperty('touch-action', 'none', 'important')
+  }
+
   oX = initData.clientX;
   oY = initData.clientY;
   initData.deltaX = 0;
@@ -90,6 +97,7 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
 
       data.cancelled = cancelled
       ev.stopPropagation()
+      if (focusedPointerId !== false) currentTarget.releasePointerCapture(focusedPointerId);
       cancelAnimationFrame(raf)
       onEnd?.(data)
       resolve(data)
@@ -123,6 +131,7 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
     onMove?.(initData);
   }).then(result => {
     events.forEach(([k, fn]) => root.removeEventListener(k, fn, true))
+    if (focusedPointerId !== false) root.body.style.touchAction = previousTouchAction
     return result
   })
 }

@@ -20,7 +20,7 @@ export interface KeyboardEventLike {
  * @example 
  * 
  * ```js
- * if (modKey(ev) === modKey.Mod | modKey.Shift && ev.code === 'KeyW') {
+ * if (modKey(ev) === (modKey.Mod | modKey.Shift) && ev.code === 'KeyW') {
  *   // Ctrl/Cmd + Shift + W, depends on the OS
  * }
  * ```
