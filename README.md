@@ -38,7 +38,7 @@ All modules are shipped as ES modules and tree-shakable.
 | dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [modKey](#modkeyev) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
 | flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
-| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
+| type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [approx](#approxa-b-epsilon) / [isInsideRect](#isinsiderectx-y-rect) / [isRectEqual](#isrectequalrect1-rect2-epsilon) / [getRectIntersection](#getrectintersectionrect-bounds) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
 <br />
 
@@ -827,6 +827,92 @@ like `new Function` but with more reasonable options and api
 ### `noop()`
 
 - Returns: `void`
+
+<br />
+
+## 🧩 type/geometry
+
+<a id="approxa-b-epsilon"></a>
+
+### `approx(a, b, epsilon?)`
+
+- **a**: `number` — The first number.
+
+- **b**: `number` — The second number.
+
+- **epsilon?**: `number` — The maximum difference allowed between the two numbers. Defaults to 0.001.
+
+- Returns: `boolean`
+
+Determines if two numbers are approximately equal within a given epsilon.
+
+<a id="isinsiderectx-y-rect"></a>
+
+### `isInsideRect(x, y, rect)`
+
+- **x**: `number` — The x-coordinate of the point.
+
+- **y**: `number` — The y-coordinate of the point.
+
+- **rect**: `RectLike` — The rectangle to check against.
+  - **x**: `number` 
+  
+  - **y**: `number` 
+  
+  - **width**: `number` 
+  
+  - **height**: `number`
+
+- Returns: `boolean`
+
+Determines whether a point (x, y) is inside a rectangle.
+
+<a id="isrectequalrect1-rect2-epsilon"></a>
+
+### `isRectEqual(rect1, rect2, epsilon?)`
+
+- **rect1**: `Nil | RectLike` — The first rectangle to compare.
+
+- **rect2**: `Nil | RectLike` — The second rectangle to compare.
+
+- **epsilon?**: `number` — The maximum difference allowed between the values of the rectangles' properties.
+
+- Returns: `boolean`
+
+Determines whether two rectangles are equal.
+
+<a id="getrectintersectionrect-bounds"></a>
+
+### `getRectIntersection(rect, bounds)`
+
+- **rect**: `RectLike` — The first rectangle.
+  - **x**: `number` 
+  
+  - **y**: `number` 
+  
+  - **width**: `number` 
+  
+  - **height**: `number`
+
+- **bounds**: `RectLike` — The second rectangle.
+  - **x**: `number` 
+  
+  - **y**: `number` 
+  
+  - **width**: `number` 
+  
+  - **height**: `number`
+
+- Returns: `RectLike` — The intersection rectangle. Can be accepted by `DOMRect.fromRect(.)`
+  - **x**: `number` 
+  
+  - **y**: `number` 
+  
+  - **width**: `number` 
+  
+  - **height**: `number`
+
+Calculates the intersection of two rectangles.
 
 <br />
 
