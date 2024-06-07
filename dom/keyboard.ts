@@ -1,4 +1,7 @@
-export const IS_MAC = navigator.platform.startsWith('Mac');
+export const IS_MAC =
+  typeof process !== 'undefined' ? process.platform === 'darwin' :
+    typeof navigator !== 'undefined' ? navigator.platform.startsWith('Mac') :
+      false;
 export const MOD_KEY = IS_MAC ? 'metaKey' : 'ctrlKey';
 export const MOD_KEY_LABEL = IS_MAC ? '⌘' : 'Ctrl';
 

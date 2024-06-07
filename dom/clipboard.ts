@@ -4,6 +4,7 @@
  * note: if you are in HTTPS and modern browser, you can directly use `navigator.clipboard.writeText()` instead.
  */
 export async function writeClipboard(text: string): Promise<void> {
+  if (typeof navigator === 'undefined' || typeof document === 'undefined') return
   if (navigator.clipboard) {
     await navigator.clipboard.writeText(text)
     return
@@ -44,6 +45,7 @@ export async function writeClipboard(text: string): Promise<void> {
  * @param timeout - default 1500
  */
 export async function readClipboard(timeout = 1500): Promise<string> {
+  if (typeof navigator === 'undefined') throw new Error('No env')
   if (!navigator.clipboard) {
     throw new Error('No support clipboard. Maybe no permission or not in https origin.')
   }
