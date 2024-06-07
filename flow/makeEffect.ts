@@ -49,6 +49,14 @@ export function makeEffect<T>(
 
   /** invoke last cleanup callback, and forget the last input */
   unaryFn.cleanup = doCleanup;
+  Object.defineProperty(unaryFn, 'value', { enumerable: true, get: () => lastInput })
 
-  return unaryFn;
+  return unaryFn as {
+    /** check whether value changed. if so, invoke last cleanup function, update `value` and remember new cleanup function */
+    (input: T): void;
+    /** invoke last cleanup function, and reset `value` to undefined */
+    cleanup(): void;
+    /** get last received value, or `undefined` if effect was clean up */
+    readonly value: T | undefined;
+  };
 }
