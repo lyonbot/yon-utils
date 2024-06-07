@@ -304,8 +304,10 @@ for await (const line of iterator) {
 
 - **isEqual?**: `(x: T, y: T) => boolean`
 
-- Returns: `{ (input: T): void; cleanup: () => void; }` 
-  - **cleanup**: `() => void` — invoke last cleanup callback, and forget the last input
+- Returns: `{ (input: T): void; cleanup(): void; readonly value: T | undefined; }` 
+  - **cleanup**: `() => void` — invoke last cleanup function, and reset `value` to undefined
+  
+  - **value?**: `NonNullable<T>` — get last received value, or `undefined` if effect was clean up
 
 Wrap `fn` and create an unary function. The actual `fn()` executes only when the argument changes.
 
