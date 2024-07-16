@@ -1,28 +1,18 @@
-import { describe, expect, test, vitest as jest } from "vitest";
+import { describe, expect, test, vitest as jest, it } from "vitest";
 import { fnQueue } from './fnQueue.js';
 
 describe('fnQueue', () => {
-  test('tap method adds callbacks into the queue', () => {
-    const queue = fnQueue();
+  test.each([
+    { reversed: false, output: [1, 2] },
+    { reversed: true, output: [2, 1] },
+  ])('basic %', (testcase) => {
+    const queue = fnQueue<[arg0: string]>(false, testcase.reversed);
+    const print = [] as number[];
 
-    const fn1 = jest.fn();
-    const fn2 = jest.fn();
+    const fn1 = jest.fn(() => print.push(1));
+    const fn2 = jest.fn(() => print.push(2));
 
-    queue.tap(fn1);
-    expect(queue.queue).toContain(fn1);
-
-    queue.tap(fn2);
-    expect(queue.queue).toContain(fn1);
-    expect(queue.queue).toContain(fn2);
-  });
-
-  test('call method invokes all callbacks and clears the queue', () => {
-    const queue = fnQueue<[arg0: string]>();
-
-    const fn1 = jest.fn();
-    const fn2 = jest.fn();
-
-    queue.tap(fn1, fn2);
+    queue.tap(fn1, fn2, null, {} as any);
 
     queue.call("hello");
     expect(fn1).toHaveBeenCalledTimes(1);
@@ -30,6 +20,7 @@ describe('fnQueue', () => {
     expect(fn2).toHaveBeenCalledTimes(1);
     expect(fn2).toBeCalledWith("hello");
     expect(queue.queue).toHaveLength(0);
+    expect(print).toEqual(testcase.output);
 
     // @ts-expect-error
     queue.call("world", 123);
@@ -37,32 +28,27 @@ describe('fnQueue', () => {
     expect(fn2).toHaveBeenCalledTimes(1);
   });
 
-  test('queue method returns the array of all tapped callbacks', () => {
-    const queue = fnQueue();
+  it.each([
+    { reversed: false, output: [1] },
+    { reversed: true, output: [3] },
+    { silent: true, output: [1, 3] },
+  ])('async fn with one throws %', async (testcase) => {
+    const queue = fnQueue(true, testcase.reversed);
+    const print = [] as number[];
 
-    const fn1 = jest.fn();
-    const fn2 = jest.fn();
+    const fn1 = jest.fn(async () => print.push(1));
+    const fn2 = jest.fn(async () => { throw new Error('error2') });
+    const fn3 = jest.fn(async () => print.push(3));
 
-    queue.tap(fn1, fn2);
+    if (testcase.silent) queue.tapSilent(fn1, fn2, fn3);
+    else queue.tap(fn1, fn2, fn3);
 
-    expect(queue.queue).toEqual([fn1, fn2]);
-  });
+    const result = queue();
 
-  test('tap method throws if non-function argument is passed', () => {
-    const queue = fnQueue();
+    if (testcase.silent) await expect(result).resolves.toBeUndefined();
+    else await expect(result).rejects.toThrow('error2');
 
-    queue.tap(undefined)
-    queue.tap(null)
-    // @ts-expect-error
-    queue.tap('invalid')
-    // @ts-expect-error
-    queue.tap(42)
-    // @ts-expect-error
-    queue.tap({})
-    // @ts-expect-error
-    queue.tap([])
-
+    expect(print).toEqual(testcase.output);
     expect(queue.queue).toHaveLength(0);
   });
-
 });
