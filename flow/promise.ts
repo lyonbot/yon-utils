@@ -207,12 +207,10 @@ export function maybeAsync<T>(input: T | Promise<T> | (() => T | Promise<T>)) {
  * Besides, the returned Promise will expose these useful properties
  * so you can get its status easily:
  *  
- * - `.wait([timeout])` — wait for result, plus timeout guard
+ * - `.wait([timeout])` — wait for result, if timeout set and exceeded, a `PromisePendingError` will be thrown
  * - `.status` — could be `"pending" | "fulfilled" | "rejected"`
  * - `.result` and `.reason`
- * - `.value` — fail-safe get result
- * 
- * Note that calling `wait(timeout)` and accessing `value` could throw a `PromisePendingError`
+ * - `.value` — fail-safe get result (or cause an Error from rejection, or cause a `PromisePendingError` if still pending)
  * 
  * @example
  * ```js

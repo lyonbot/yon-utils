@@ -47,7 +47,7 @@ describe('withDefer', () => {
       defer(disposeFn3)
 
       throw new Error('main')
-    })).toThrowError('disposeFn2') // <- last error from disposeFn2
+    })).toThrowError('disposeFn1') // <- last error from disposeFn1 (FILO stack)
 
     expect(disposeFn1).toBeCalledTimes(2)
     expect(disposeFn2).toBeCalledTimes(1)
@@ -100,7 +100,7 @@ describe('withAsyncDefer', () => {
       defer(disposeFn3)
 
       throw new Error('main')
-    })).rejects.toThrowError('disposeFn2') // <- last error from disposeFn2
+    })).rejects.toThrowError('disposeFn1') // <- last error from disposeFn1 (FILO stack)
 
     expect(disposeFn1).toBeCalledTimes(2)
     expect(disposeFn2).toBeCalledTimes(1)

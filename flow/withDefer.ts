@@ -1,23 +1,27 @@
+import { fnQueue } from "./fnQueue.js"
+
 /**
- * Like golang and other language, use `defer(callback)` to properly release resources, and avoid `try catch finally` hells.
+ * This is a wrapper of `fnQueue`, inspired by golang's `defer` keyword.
+ * You can add dispose callbacks to a stack, and they will be invoked in `finally` stage.
  * 
- * All deferred callbacks are invoked in `finally` blocks.
- * If one callback throws, its following callbacks still work. At the end, `withDefer` only throws the last Error.
+ * No more `try catch finally` hells!
+ * 
+ * For sync functions:
  * 
  * ```js
  * // sync
  * const result = withDefer((defer) => {
  *   const file = openFileSync('xxx')
- *   defer(() => closeFileSync(file))  // <-
+ *   defer(() => closeFileSync(file))  // <- register callback
  * 
  *   const parser = createParser()
- *   defer(() => parser.dispose())  // <-
+ *   defer(() => parser.dispose())  // <- register callback
  * 
  *   return parser.parse(file.readSync())
  * })
  * ```
  * 
- * If using async functions, use `withAsyncDefer`
+ * For async functions, use `withAsyncDefer`
  * 
  * ```js
  * // async
@@ -41,81 +45,32 @@
  * @remark Refer to [TypeScript using syntax](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management),
  * [TC39 Explicit Resource Management](https://github.com/tc39/proposal-explicit-resource-management) and GoLang's `defer` keyword.
  */
-export function withDefer<Ret = any>(
-  fn: (defer: withDefer.DeferFunction) => Ret
-): Ret {
-  return innerWithDefer(fn as any)
+export function withDefer<Ret = any>(fn: (defer: Defer) => Ret): Ret {
+  return innerWithDefer(fn as any, false)
 }
 
+type Defer = fnQueue.FnQueue<[]>['tap']
+
 /**
- * Same as **withDefer** plus it returns a Promise, and supports async callbacks.
+ * Same as **withDefer**, but this returns a Promise, and supports async callbacks.
  * 
  * @see {@link withDefer}
  */
-export function withAsyncDefer<Ret extends Promise<any> = any>(
-  fn: (defer: withDefer.AsyncDeferFunction) => Ret
-): Ret {
-  return innerWithDefer(fn as any, { async: true })
-}
-
-export namespace withDefer {
-  export interface DeferFunction<Ret = any> {
-    (callback: () => Ret): void
-
-    /** if callback throws, catch the error and ignore it */
-    silent: (callback: () => Ret) => void
-  }
-
-  export type AsyncDeferFunction = DeferFunction<Promise<any> | void>
-
-  export interface Options {
-    async?: boolean
-  }
+export function withAsyncDefer<Ret extends Promise<any> = any>(fn: (defer: Defer) => Ret): Ret {
+  return innerWithDefer(fn as any, true)
 }
 
 function innerWithDefer<Ret = any>(
-  fn: (defer: withDefer.DeferFunction) => Ret,
-  options?: withDefer.Options
+  fn: (defer: Defer) => Ret,
+  isAsync: boolean
 ): Ret {
-  let isAsync = !!(options && options.async);
-
-  const queue = [] as (() => any)[];
-
-  const defer = ((fn: () => any) => {
-    if (typeof fn === 'function') queue.push(fn)
-  }) as withDefer.DeferFunction<any>
-  defer.silent = (callback) => {
-    if (typeof fn !== 'function') return
-
-    const newCallback: () => any
-      = (isAsync)
-        ? () => Promise.resolve().then(callback).catch(() => 0)
-        : () => { try { callback() } catch { } }
-
-    defer(newCallback)
-  }
-
-  const flushAsync = () => queue.reduce((p, fn) => p.finally(fn), Promise.resolve())
-  const flushSync = () => {
-    let i = 0, len = queue.length;
-    let thrownError: any, hasThrown = false
-
-    while (i < len) {
-      try {
-        while (i < len) queue[i++]()
-      } catch (error) {
-        hasThrown = true
-        thrownError = error
-      }
-    }
-
-    if (hasThrown) throw thrownError
-  }
+  const queue = fnQueue<[]>(isAsync, true, 'throwLastError')
+  const defer = queue.tap
 
   if (isAsync) {
-    return new Promise<Ret>(res => res(fn(defer))).finally(flushAsync) as Ret
+    return new Promise<Ret>(res => res(fn(defer))).finally(() => queue()) as Ret
   } else {
     try { return fn(defer) }
-    finally { flushSync() }
+    finally { queue() }
   }
 }

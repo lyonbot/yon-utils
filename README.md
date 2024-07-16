@@ -36,7 +36,7 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [modKey](#modkeyev) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
-| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
+| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueueasync-reversed-error) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
 | type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [approx](#approxa-b-epsilon) / [isInsideRect](#isinsiderectx-y-rect) / [isRectEqual](#isrectequalrect1-rect2-epsilon) / [getRectIntersection](#getrectintersectionrect-bounds) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
@@ -230,35 +230,49 @@ All _suppressed_ calls will get the last started Promise.
 
 ## 🧩 flow/fnQueue
 
-<a id="fnqueue"></a>
+<a id="fnqueueasync-reversed-error"></a>
 
-### `fnQueue()`
+### `fnQueue(async?, reversed?, error?)`
 
-- Returns: `{ tap, call, queue }` 
-  - **tap**: `(...fns: (Fn<any, ARGS> | Falsy)[]) => void` — add callbacks into the queue
+- **async?**: `boolean` — if true, all queued functions are treated as async, and we return a Promise in the end.
+
+- **reversed?**: `boolean` — if true, the order of execution is reversed (FILO, like a stack)
+
+- **error?**: `"abort" | "throwLastError" | "ignore"` — if met error, shall we 'abort' immediately, or 'throwLastError', or 'ignore' all errors
+
+- Returns: `FnQueue<ARGS, void>` 
+  - **tap**: `Tap<ARGS> & { silent: Tap<ARGS>; }` — add functions to queue. see example. use *tap.silent(fns)* to ignore errors
   
-  - **call**: `(...args: ARGS) => void` — invoke all callbacks and clear the queue
+  - **tapSilent**: `Tap<ARGS>` — add functions to queue, but silently ignore their errors (identical to *tap.silent*)
   
-  - **queue**: `Fn<any, ARGS>[]` — the array of all tapped callbacks
+  - **call**: `(...args: ARGS) => RET` — clear the queue, execute functions
+  
+  - **queue**: `{ silent?: boolean | undefined; fn: Fn<any, ARGS>; }[]` — the queued functions
 
 #### Example
 
 With `fnQueue`, you can implement a simple disposer to avoid resource leaking.
 
+**Order of execution**: defaults to FIFO (first in, last run); set 1st argument to `true` to reverse the order (FILO)
+
+**Exceptions**: queued functions shall NOT throw errors, otherwise successive calls will be aborted.
+
 ```js
-const onDispose = fnQueue();
+const dispose = fnQueue();
 try {
   const srcFile = await openFile(path1);
-  onDispose.tap(() => srcFile.close());
+  dispose.tap(() => srcFile.close());
 
   const dstFile = await openFile(path2);
   opDispose.tap(() => dstFile.close());
 
   await copyData(srcFile, dstFile);
 } finally {
-  onDispose.call(); // close handles
-  
-  onDispose.call(); // nothing happens -- the queue is emptied
+  // first call:
+  dispose(); // close handles
+
+  // second call:
+  dispose(); // nothing happens -- the queue is emptied
 }
 ```
 
@@ -390,12 +404,10 @@ Returns a Promise with these 2 methods exposed, so you can control its behavior:
 Besides, the returned Promise will expose these useful properties
 so you can get its status easily:
  
-- `.wait([timeout])` — wait for result, plus timeout guard
+- `.wait([timeout])` — wait for result, if timeout set and exceeded, a `PromisePendingError` will be thrown
 - `.status` — could be `"pending" | "fulfilled" | "rejected"`
 - `.result` and `.reason`
-- `.value` — fail-safe get result
-
-Note that calling `wait(timeout)` and accessing `value` could throw a `PromisePendingError`
+- `.value` — fail-safe get result (or cause an Error from rejection, or cause a `PromisePendingError` if still pending)
 
 #### Example
 
@@ -547,29 +559,31 @@ const result = await timing(print, async () => {
 
 ### `withDefer(fn)`
 
-- **fn**: `(defer: DeferFunction<any>) => Ret`
+- **fn**: `(defer: Tap<[]> & { silent: Tap<[]>; }) => Ret`
 
 - Returns: `Ret`
 
-Like golang and other language, use `defer(callback)` to properly release resources, and avoid `try catch finally` hells.
+This is a wrapper of `fnQueue`, inspired by golang's `defer` keyword.
+You can add dispose callbacks to a stack, and they will be invoked in `finally` stage.
 
-All deferred callbacks are invoked in `finally` blocks.
-If one callback throws, its following callbacks still work. At the end, `withDefer` only throws the last Error.
+No more `try catch finally` hells!
+
+For sync functions:
 
 ```js
 // sync
 const result = withDefer((defer) => {
   const file = openFileSync('xxx')
-  defer(() => closeFileSync(file))  // <-
+  defer(() => closeFileSync(file))  // <- register callback
 
   const parser = createParser()
-  defer(() => parser.dispose())  // <-
+  defer(() => parser.dispose())  // <- register callback
 
   return parser.parse(file.readSync())
 })
 ```
 
-If using async functions, use `withAsyncDefer`
+For async functions, use `withAsyncDefer`
 
 ```js
 // async
@@ -600,11 +614,11 @@ Refer to [TypeScript using syntax](https://www.typescriptlang.org/docs/handbook/
 
 ### `withAsyncDefer(fn)`
 
-- **fn**: `(defer: AsyncDeferFunction) => Ret`
+- **fn**: `(defer: Tap<[]> & { silent: Tap<[]>; }) => Ret`
 
 - Returns: `Ret`
 
-Same as **withDefer** plus it returns a Promise, and supports async callbacks.
+Same as **withDefer**, but this returns a Promise, and supports async callbacks.
 
 <br />
 
