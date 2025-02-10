@@ -78,8 +78,13 @@ export function contains<T>(collection: CollectionOf<T> | Nil, item: T): boolean
 
 /**
  * a simple forEach iterator that support both `Array | Set | Map | Object | Iterable` as the input
+ * 
+ * when met plain object, it works like `forIn` of lodash.
  */
-export function forEach(objOrArray: any, iter: (value: any, key: any, whole: any) => any) {
+export function forEach<K, V>(objOrArray: Map<K, V>, iter: (value: V, key: K, whole: Map<K, V>) => void): void;
+export function forEach<T extends Iterable<any>>(objOrArray: T, iter: (value: IterItem<T>, key: number, whole: T) => void): void;
+export function forEach<U extends Record<any, any>>(objOrArray: U, iter: (value: U[keyof U], key: keyof U, whole: U) => void): void;
+export function forEach(objOrArray: any, iter: (value: any, key: any, whole: any) => void): void {
   if (!objOrArray || typeof objOrArray !== 'object') return;
   if (Array.isArray(objOrArray) || objOrArray instanceof Map) return objOrArray.forEach(iter);
   if (Symbol.iterator in objOrArray) {
@@ -91,3 +96,5 @@ export function forEach(objOrArray: any, iter: (value: any, key: any, whole: any
     iter(objOrArray[k], k, objOrArray);
   }
 }
+
+export type IterItem<T> = T extends Iterable<infer U> ? U : never;

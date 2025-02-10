@@ -188,6 +188,8 @@ and it will keep tracking the cursor's movement, calling your `onMove(...)`, unt
 #### Example
 
 ```js
+
+button.style.touchAction = 'none' // CSS touch-action: none
 button.addEventListener('pointerdown', event => {
   event.preventDefault();
   startMouseMove({
@@ -1002,13 +1004,15 @@ input an array / Set / Map / WeakSet / WeakMap / object etc, check if it contain
 
 ### `forEach(objOrArray, iter)`
 
-- **objOrArray**: `any`
+- **objOrArray**: `U`
 
-- **iter**: `(value: any, key: any, whole: any) => any`
+- **iter**: `(value: U[keyof U], key: keyof U, whole: U) => void`
 
 - Returns: `void`
 
 a simple forEach iterator that support both `Array | Set | Map | Object | Iterable` as the input
+
+when met plain object, it works like `forIn` of lodash.
 
 <br />
 
