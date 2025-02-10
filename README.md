@@ -36,7 +36,7 @@ All modules are shipped as ES modules and tree-shakable.
 | module | methods |
 |---------|:--------|
 | dom | [writeClipboard](#writeclipboardtext) / [readClipboard](#readclipboardtimeout) / [clsx](#clsxargs) / [elt](#elttagname-attrs-children) / [modKey](#modkeyev) / [startMouseMove](#startmousemove-initialevent-onmove-onend-) |
-| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueueasync-reversed-error) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
+| flow | [delay](#delaymilliseconds) / [debouncePromise](#debouncepromisefn) / [fnQueue](#fnqueue) / [makeAsyncIterator](#makeasynciterator) / [makeEffect](#makeeffectfn-isequal) / [maybeAsync](#maybeasyncinput) / [makePromise](#makepromise) / [PromiseEx](#new-promiseexexecutor) / [PromisePendingError](#new-promisependingerrorcause) / [timing](#timingoutput-promise) / [withDefer](#withdeferfn) / [withAsyncDefer](#withasyncdeferfn) |
 | manager | [ModuleLoader](#new-moduleloadersource) / [CircularDependencyError](#new-circulardependencyerrorquery-querystack) / [getSearchMatcher](#getsearchmatcherkeyword) |
 | type | [is](#isx-y) / [shallowEqual](#shallowequalobja-objb-depth) / [newFunction](#newfunctionargumentnames-functionbody-options) / [noop](#noop) / [approx](#approxa-b-epsilon) / [isInsideRect](#isinsiderectx-y-rect) / [isRectEqual](#isrectequalrect1-rect2-epsilon) / [getRectIntersection](#getrectintersectionrect-bounds) / [toArray](#toarrayvalue) / [find](#finditerator-predicate) / [reduce](#reduceiterator-initial-reducer) / [head](#headiterator) / [contains](#containscollection-item) / [forEach](#foreachobjorarray-iter) / [stringHash](#stringhashstr) / [getVariableName](#getvariablenamebasicname-existingvariables) / [bracket](#brackettext1-text2-brackets) / [isNil](#isnilobj) / [isObject](#isobjectobj) / [isThenable](#isthenablesth) |
 
@@ -232,49 +232,49 @@ All _suppressed_ calls will get the last started Promise.
 
 ## 🧩 flow/fnQueue
 
-<a id="fnqueueasync-reversed-error"></a>
+<a id="fnqueue"></a>
 
-### `fnQueue(async?, reversed?, error?)`
+### `fnQueue()`
 
-- **async?**: `boolean` — if true, all queued functions are treated as async, and we return a Promise in the end.
-
-- **reversed?**: `boolean` — if true, the order of execution is reversed (FILO, like a stack)
-
-- **error?**: `"abort" | "throwLastError" | "ignore"` — if met error, shall we 'abort' immediately, or 'throwLastError', or 'ignore' all errors
-
-- Returns: `FnQueue<ARGS, void>` 
-  - **tap**: `Tap<ARGS> & { silent: Tap<ARGS>; }` — add functions to queue. see example. use *tap.silent(fns)* to ignore errors
+- Returns: `FnQueue<Args, void>` 
+  - **tap**: `AddCallbacks<Args>` — add one or more functions.
   
-  - **tapSilent**: `Tap<ARGS>` — add functions to queue, but silently ignore their errors (identical to *tap.silent*)
+  - **tapSilent**: `AddCallbacks<Args>` — add functions, and will silently ignore their errors
   
-  - **call**: `(...args: ARGS) => RET` — clear the queue, execute functions
+  - **call**: `(...args: Args) => RET` — run functions. if fnQueue is async, returns Promise
   
-  - **queue**: `{ silent?: boolean | undefined; fn: Fn<any, ARGS>; }[]` — the queued functions
+  - **queue**: `{ silent?: boolean | undefined; fn: Fn<any, Args>; }[]` — the queued functions
+
+Store a list of functions, and execute them in order.
+
+- **Use case**: 🧹 disposer (clean resources) / ⚡ event emitter / 🪢 tapable-like middleware
+- **Defaults**: sync, FIFO, errors will abort
+
+Use decorators or options, to customize a fnQueue:
+
+- `fnQueue.async()` to create async queue -- the `call()` will return a Promise instead.
+- `fnQueue.filo()` to create FILO queue.
+- `fnQueue.onetime()` to clear the queue after each call.
+- `fnQueue({ error: 'ignore' })` to ignore errors.
+
+Options can be combined, like `fnQueue.async.onetime()` -- see example below.
 
 #### Example
 
-With `fnQueue`, you can implement a simple disposer to avoid resource leaking.
-
-**Order of execution**: defaults to FIFO (first in, last run); set 1st argument to `true` to reverse the order (FILO)
-
-**Exceptions**: queued functions shall NOT throw errors, otherwise successive calls will be aborted.
-
 ```js
-const dispose = fnQueue();
+// create an async fnQueue with options ...
+const disposer = fnQueue.async.onetime({ error: 'ignore' });
+
 try {
   const srcFile = await openFile(path1);
-  dispose.tap(() => srcFile.close());
+  disposer.tap(() => srcFile.close());
 
   const dstFile = await openFile(path2);
-  opDispose.tap(() => dstFile.close());
+  disposer.tap(() => dstFile.close());
 
   await copyData(srcFile, dstFile);
 } finally {
-  // first call:
-  dispose(); // close handles
-
-  // second call:
-  dispose(); // nothing happens -- the queue is emptied
+  await disposer.call();
 }
 ```
 
@@ -561,14 +561,14 @@ const result = await timing(print, async () => {
 
 ### `withDefer(fn)`
 
-- **fn**: `(defer: Tap<[]> & { silent: Tap<[]>; }) => Ret`
+- **fn**: `(defer: AddCallbacks<[]>) => Ret`
 
 - Returns: `Ret`
 
-This is a wrapper of `fnQueue`, inspired by golang's `defer` keyword.
-You can add dispose callbacks to a stack, and they will be invoked in `finally` stage.
+Get rid of `try catch finally` hells!
+Use `defer(callback)` to clean up resources, and they will run in `finally` stage.
 
-No more `try catch finally` hells!
+Works on both sync and async procedures.
 
 For sync functions:
 
@@ -600,7 +600,11 @@ const result = await withAsyncDefer(async (defer) => {
 })
 ```
 
-If you want to suppress the callbacks' throwing, use `defer.silent`
+**Error handling**
+
+If one callback throws, rest callbacks still work. And you get the last error thrown.
+
+To suppress a callback's throwing, use `defer.silent(callback)`
 
 ```js
 defer.silent(() => closeFile(file))  // will never throws
@@ -616,7 +620,7 @@ Refer to [TypeScript using syntax](https://www.typescriptlang.org/docs/handbook/
 
 ### `withAsyncDefer(fn)`
 
-- **fn**: `(defer: Tap<[]> & { silent: Tap<[]>; }) => Ret`
+- **fn**: `(defer: AddCallbacks<[]>) => Ret`
 
 - Returns: `Ret`
 

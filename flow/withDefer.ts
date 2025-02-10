@@ -1,10 +1,10 @@
-import { fnQueue } from "./fnQueue.js"
+import { FnQueue, fnQueue } from "./fnQueue.js"
 
 /**
- * This is a wrapper of `fnQueue`, inspired by golang's `defer` keyword.
- * You can add dispose callbacks to a stack, and they will be invoked in `finally` stage.
+ * Get rid of `try catch finally` hells!
+ * Use `defer(callback)` to clean up resources, and they will run in `finally` stage.
  * 
- * No more `try catch finally` hells!
+ * Works on both sync and async procedures.
  * 
  * For sync functions:
  * 
@@ -36,7 +36,11 @@ import { fnQueue } from "./fnQueue.js"
  * })
  * ```
  * 
- * If you want to suppress the callbacks' throwing, use `defer.silent`
+ * **Error handling**
+ * 
+ * If one callback throws, rest callbacks still work. And you get the last error thrown.
+ * 
+ * To suppress a callback's throwing, use `defer.silent(callback)`
  * 
  * ```js
  * defer.silent(() => closeFile(file))  // will never throws
@@ -49,7 +53,7 @@ export function withDefer<Ret = any>(fn: (defer: Defer) => Ret): Ret {
   return innerWithDefer(fn as any, false)
 }
 
-type Defer = fnQueue.FnQueue<[]>['tap']
+type Defer = FnQueue.FnQueue<[]>['tap']
 
 /**
  * Same as **withDefer**, but this returns a Promise, and supports async callbacks.
@@ -62,12 +66,12 @@ export function withAsyncDefer<Ret extends Promise<any> = any>(fn: (defer: Defer
 
 function innerWithDefer<Ret = any>(
   fn: (defer: Defer) => Ret,
-  isAsync: boolean
+  async: boolean
 ): Ret {
-  const queue = fnQueue<[]>(isAsync, true, 'throwLastError')
+  const queue = fnQueue<[]>({ async, error: 'throwLastError', filo: true, onetime: true })
   const defer = queue.tap
 
-  if (isAsync) {
+  if (async) {
     return new Promise<Ret>(res => res(fn(defer))).finally(() => queue()) as Ret
   } else {
     try { return fn(defer) }

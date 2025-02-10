@@ -19,13 +19,13 @@ describe('fnQueue', () => {
     expect(fn1).toBeCalledWith("hello");
     expect(fn2).toHaveBeenCalledTimes(1);
     expect(fn2).toBeCalledWith("hello");
-    expect(queue.queue).toHaveLength(0);
+    expect(queue.queue).toHaveLength(2);    // not onetime
     expect(print).toEqual(testcase.output);
 
     // @ts-expect-error
     queue.call("world", 123);
-    expect(fn1).toHaveBeenCalledTimes(1);
-    expect(fn2).toHaveBeenCalledTimes(1);
+    expect(fn1).toHaveBeenCalledTimes(2);
+    expect(fn2).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -33,7 +33,7 @@ describe('fnQueue', () => {
     { reversed: true, output: [3] },
     { silent: true, output: [1, 3] },
   ])('async fn with one throws %', async (testcase) => {
-    const queue = fnQueue(true, testcase.reversed);
+    const queue = fnQueue.onetime(true, testcase.reversed);   // onetime queue
     const print = [] as number[];
 
     const fn1 = jest.fn(async () => print.push(1));

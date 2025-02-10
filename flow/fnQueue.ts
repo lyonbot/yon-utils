@@ -1,73 +1,118 @@
 import { Fn, Falsy } from "../type/types.js";
 
-export namespace fnQueue {
-  type Tap<ARGS extends any[]> = (...fns: (Fn<any, ARGS> | Falsy)[]) => void;
+export namespace FnQueue {
+  export interface Options {
+    async: boolean
+    filo: boolean
+    onetime: boolean
+    error: 'abort' | 'throwLastError' | 'ignore'
+  }
 
-  /**
-   * the return value of `fnQueue`
-   */
-  export type FnQueue<ARGS extends any[] = any[], RET = void> = {
-    (...args: ARGS): RET
+  export type Factory<R = void> = {
+    <Args extends any[] = any[]>(async: true, FILO?: boolean, error?: 'abort' | 'throwLastError' | 'ignore'): FnQueue<Args, Promise<void>>
+    <Args extends any[] = any[]>(async: boolean, FILO?: boolean, error?: 'abort' | 'throwLastError' | 'ignore'): FnQueue<Args, any>
+    <Args extends any[] = any[]>(options: Partial<Options>): FnQueue<Args, R>
+    <Args extends any[] = any[]>(): FnQueue<Args, R>
 
-    /** add functions to queue. see example. use *tap.silent(fns)* to ignore errors */
-    tap: Tap<ARGS> & { silent: Tap<ARGS> };
+    async: Factory<Promise<void>>
 
-    /** add functions to queue, but silently ignore their errors (identical to *tap.silent*) */
-    tapSilent: Tap<ARGS>
+    /** change execution order to FILO (first-in, last-out, like a stack) */
+    filo: Factory<R>
 
-    /** clear the queue, execute functions */
-    call: (...args: ARGS) => RET;
+    /** after each call, clear the queue */
+    onetime: Factory<R>
+  }
+
+  export type AddCallbacks<Args extends any[]> = {
+    (...fns: (Fn<any, Args> | Falsy)[]): void;
+    silent(...fns: (Fn<any, Args> | Falsy)[]): void;
+  }
+
+  export type FnQueue<Args extends any[] = any[], RET = void> = {
+    (...args: Args): RET
+
+    /** add one or more functions. */
+    tap: AddCallbacks<Args>
+
+    /** add functions, and will silently ignore their errors */
+    tapSilent: AddCallbacks<Args>
+
+    /** run functions. if fnQueue is async, returns Promise */
+    call: (...args: Args) => RET;
 
     /** the queued functions */
-    queue: { silent?: boolean; fn: Fn<any, ARGS> }[];
+    queue: { silent?: boolean; fn: Fn<any, Args> }[];
   }
 }
 
 /**
+ * Store a list of functions, and execute them in order.
+ * 
+ * - **Use case**: 🧹 disposer (clean resources) / ⚡ event emitter / 🪢 tapable-like middleware
+ * - **Defaults**: sync, FIFO, errors will abort
+ * 
+ * Use decorators or options, to customize a fnQueue:
+ * 
+ * - `fnQueue.async()` to create async queue -- the `call()` will return a Promise instead.
+ * - `fnQueue.filo()` to create FILO queue.
+ * - `fnQueue.onetime()` to clear the queue after each call.
+ * - `fnQueue({ error: 'ignore' })` to ignore errors.
+ * 
+ * Options can be combined, like `fnQueue.async.onetime()` -- see example below.
+ * 
  * @example
- * 
- * With `fnQueue`, you can implement a simple disposer to avoid resource leaking.
- * 
- * **Order of execution**: defaults to FIFO (first in, last run); set 1st argument to `true` to reverse the order (FILO)
- * 
- * **Exceptions**: queued functions shall NOT throw errors, otherwise successive calls will be aborted.
- * 
  * ```js
- * const dispose = fnQueue();
+ * // create an async fnQueue with options ...
+ * const disposer = fnQueue.async.onetime({ error: 'ignore' });
+ * 
  * try {
  *   const srcFile = await openFile(path1);
- *   dispose.tap(() => srcFile.close());
+ *   disposer.tap(() => srcFile.close());
  * 
  *   const dstFile = await openFile(path2);
- *   opDispose.tap(() => dstFile.close());
+ *   disposer.tap(() => dstFile.close());
  * 
  *   await copyData(srcFile, dstFile);
  * } finally {
- *   // first call:
- *   dispose(); // close handles
- *
- *   // second call:
- *   dispose(); // nothing happens -- the queue is emptied
+ *   await disposer.call();
  * }
  * ```
- * 
- * @param async - if true, all queued functions are treated as async, and we return a Promise in the end.
- * @param reversed - if true, the order of execution is reversed (FILO, like a stack)
- * @param error - if met error, shall we 'abort' immediately, or 'throwLastError', or 'ignore' all errors
  */
-export function fnQueue<ARGS extends any[] = any[]>(async: true, reversed?: boolean, error?: 'abort' | 'throwLastError' | 'ignore'): fnQueue.FnQueue<ARGS, Promise<void>>
-export function fnQueue<ARGS extends any[] = any[]>(async?: boolean, reversed?: boolean, error?: 'abort' | 'throwLastError' | 'ignore'): fnQueue.FnQueue<ARGS, void>
-export function fnQueue<ARGS extends any[] = any[]>(async?: boolean, reversed?: boolean, error?: 'abort' | 'throwLastError' | 'ignore'): fnQueue.FnQueue<ARGS> {
+export const fnQueue = getFnQueueFactory({ async: false, filo: false, onetime: false, error: 'abort' })
+
+function getFnQueueFactory(options: FnQueue.Options) {
+  const ans = (async?: boolean | object, filo?: boolean, error?: any) => {
+    const o = { ...options }
+    if (async && typeof async === 'object') {
+      Object.assign(o, async)
+    } else {
+      if (async) o.async = true
+      if (filo) o.filo = true
+      if (error) o.error = error
+    }
+    return createFnQueue(o)
+  }
+
+  Object.defineProperty(ans, 'async', { get: () => getFnQueueFactory({ ...options, async: true }) })
+  Object.defineProperty(ans, 'filo', { get: () => getFnQueueFactory({ ...options, filo: true }) })
+  Object.defineProperty(ans, 'onetime', { get: () => getFnQueueFactory({ ...options, onetime: true }) })
+
+  return ans as unknown as FnQueue.Factory;
+}
+
+function createFnQueue<ARGS extends any[] = any[]>(options: FnQueue.Options): FnQueue.FnQueue<ARGS, any> {
   type F = Fn<any, ARGS>
-  const queue = [] as fnQueue.FnQueue<ARGS>['queue'];
+
+  const { async, filo, onetime, error } = options;
+  const queue = [] as FnQueue.FnQueue<ARGS>['queue'];
 
   const errorSilent = error === 'ignore';
   const throwLastError = error === 'throwLastError';
 
   function call(...args: ARGS) {
     let finalError: any;
-    let tasks = queue.splice(0)
-    if (reversed) tasks = tasks.reverse();
+    let tasks = onetime ? queue.splice(0) : queue.slice()
+    if (filo) tasks = tasks.reverse();
 
     if (async) {
       const shift = (p: Promise<void>): Promise<void> => tasks.length
@@ -102,7 +147,7 @@ export function fnQueue<ARGS extends any[] = any[]>(async?: boolean, reversed?: 
   }
 
   call.tap = tap;
-  call.tapSilent = tap.silent;
+  call.tapSilent = tap.silent as any;
   call.call = call;
   call.queue = queue;
 
