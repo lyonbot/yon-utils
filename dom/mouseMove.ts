@@ -30,6 +30,8 @@ const supportPointerEvents = typeof document !== 'undefined' && 'onpointerdown' 
  * @returns - the final position when user releases button
  * @example
  * ```js
+ * 
+ * button.style.touchAction = 'none' // CSS touch-action: none
  * button.addEventListener('pointerdown', event => {
  *   event.preventDefault();
  *   startMouseMove({
@@ -47,7 +49,6 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
   const sinceTime = Date.now();
 
   let focusedPointerId = 'pointerId' in initialEvent && initialEvent.pointerId
-  let previousTouchAction = root.body.style.touchAction
   let oX = 0;
   let oY = 0;
 
@@ -77,7 +78,6 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
 
   if (focusedPointerId !== false) {
     currentTarget.setPointerCapture(focusedPointerId);
-    root.body.style.setProperty('touch-action', 'none', 'important')
   }
 
   oX = initData.clientX;
@@ -86,6 +86,7 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
   initData.deltaY = 0;
 
   const events: [event: string, handler: any][] = []
+  const eventsTarget = root.body;
 
   return new Promise<MouseMoveInfo>((resolve) => {
     let raf = 0;
@@ -126,12 +127,11 @@ export function startMouseMove({ initialEvent, onMove, onEnd }: MouseMoveInitOpt
       )
     }
 
-    events.forEach(([k, fn]) => root.addEventListener(k, fn, true))
+    events.forEach(([k, fn]) => eventsTarget.addEventListener(k, fn, true))
 
     onMove?.(initData);
   }).then(result => {
-    events.forEach(([k, fn]) => root.removeEventListener(k, fn, true))
-    if (focusedPointerId !== false) root.body.style.touchAction = previousTouchAction
+    events.forEach(([k, fn]) => eventsTarget.removeEventListener(k, fn, true))
     return result
   })
 }

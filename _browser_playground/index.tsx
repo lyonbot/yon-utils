@@ -18,6 +18,7 @@ document.body.appendChild(
       position: 'absolute',
       left: 50,
       top: 300,
+      touchAction: 'none',
     }}
   >
     <p>Drag Me</p>
